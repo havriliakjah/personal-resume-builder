@@ -1,5 +1,7 @@
 # Synthesis Workbench
 
+*v1.0 · public foundation — see the [Roadmap](#roadmap) for what's private.*
+
 A small, local desktop app that captures a person's work history at a structured level, then runs reusable lenses ("formulas") over the data to produce synthesized, resume-grade points.
 
 The app does **not** write resume bullets — it stops at synthesized points, leaving final voice and formatting to a downstream pass (a human, or an LLM, or both). The point is that your data exists once, in one shape, and any number of formulas can read it.
@@ -98,9 +100,15 @@ python server.py
 
 ---
 
+## Roadmap
+
+**v1.X — polish on this foundation.** Refinements to the existing architecture, UI, documentation, performance. Anything that improves what's already here without changing the structural shape lands as v1.1, v1.2, etc.
+
+**v2.0+ — private development.** The next layers — formulas that declare tier and engagement requirements, the synthesis output engine, the bolstering loop, multi-job orchestration — are being built in a private workspace. This public repo represents the foundation; the application logic that compounds on top of it stays private until it's worth sharing.
+
 ## Status
 
-Personal project. Not currently published as a product. If you'd like to discuss it, my contact information is in my application.
+Personal project. Not currently published as a product. If you'd like to discuss it — current or future — my contact information is in my application.
 
 ## License
 
