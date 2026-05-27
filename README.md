@@ -33,7 +33,7 @@ A few patterns worth pointing out, because they show up everywhere in the codeba
 
 **Visual vocabulary as a first-class identifier.** Each unique repeating section has its own color (driven by a `data-home-section` attribute in the DOM). The SAME section keeps the SAME color across every tier view filter. Color is identity, not decoration.
 
-**93-assertion test suite.** Covers every API surface plus the derivation engine, the tier progress logic, and the engagement-active stories behavior. `python Frontend/test_api.py` to run.
+**118-assertion test suite.** Covers every API surface plus the derivation engine, the tier progress logic, and the engagement-active stories behavior. `python Frontend/test_api.py` to run.
 
 For the longer story (principles, design decisions, the journey from prototype to here) see `MD/System_Principles.md` and the per-feature design docs in `MD/`.
 
@@ -47,14 +47,17 @@ Three tiers. The browser (`Frontend/*.html`) calls `Frontend/server.py` (Flask) 
 
 ## Quick start
 
-Tested on Windows + Python 3 (miniconda). Flask + optional `pywebview` for the desktop window.
+Tested on Windows + Python 3 (miniconda). Flask is the only required dependency; `pywebview` is optional and powers the windowless Windows desktop launcher.
 
 ```powershell
+# 0. Install Python dependencies
+pip install -r requirements.txt
+
 # 1. Build / migrate the database (non-destructive, safe to re-run)
 cd DB
 python build_synthesis_db.py
 
-# 2. Run the test suite (should land at 93 passing assertions)
+# 2. Run the test suite (should land at 118 passing assertions)
 cd ..\Frontend
 python test_api.py
 
@@ -62,7 +65,7 @@ python test_api.py
 python server.py
 # → http://127.0.0.1:5000/profile
 
-# 3b. Or launch as a desktop app (Windows)
+# 3b. Or launch as a desktop app (Windows, requires pywebview)
 .\"Synthesis Workbench.bat"
 ```
 
@@ -81,7 +84,7 @@ python server.py
 ├── Frontend/
 │   ├── server.py                 ← Flask web layer
 │   ├── data.py                   ← data layer (ONLY code with SQL)
-│   ├── test_api.py               ← 93-assertion suite
+│   ├── test_api.py               ← 118-assertion suite
 │   ├── *.html                    ← start / profile / job / workbench
 │   ├── desktop.py + .bat         ← pywebview launcher (Windows)
 │   └── synthesis.{ico,png}       ← app icons
@@ -101,4 +104,4 @@ Personal project. Not currently published as a product. If you'd like to discuss
 
 ## License
 
-Personal project — code is shared for portfolio/illustration purposes. Reach out before reusing substantial portions in your own work.
+MIT — see [LICENSE](./LICENSE). You're free to use, modify, and redistribute as long as the copyright + license notice are included.
