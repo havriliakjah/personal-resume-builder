@@ -92,9 +92,13 @@ Each repeating section has its own color, consistent across every view, so a use
 
 ![Synthesis Workbench home screen](<./Docs/Visual Examples/Main Page.png>)
 
-**Personal Profile.** Each job carries a status dot reflecting its readiness tier — amber for in progress, with tier-specific colors as it graduates through T1 / T2 / T3 Ready. Status is computed at read time from the values themselves; no flag is stored.
+**Personal Profile — before.** Three newly created jobs, all amber, all "In Progress." Status is computed from the values themselves at read time; no flag is stored on the row.
 
-![Personal Profile — jobs grouped by readiness tier](<./Docs/Visual Examples/In Progress Jobs.png>)
+![Personal Profile — three jobs all in progress](<./Docs/Visual Examples/In Progress Jobs - Full.png>)
+
+**Personal Profile — after.** The same three jobs after their intake cards have been pasted in. Each one is now sitting in a different readiness group — T3 Ready (top, with the small violet engagement-active dot because the Story track has content), T2 Ready (middle), T1 Ready (bottom). One image, three colors, every state of the readiness ladder visible at once.
+
+![Personal Profile — three jobs at three readiness tiers](<./Docs/Visual Examples/Completed Job - Tier 1.png>)
 
 ---
 
