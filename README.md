@@ -86,6 +86,18 @@ Each repeating section has its own color, consistent across every view, so a use
 
 ---
 
+## Screenshots
+
+**Home screen.** Two doors into the app — the Personal Profile (where companies live) and the Formulas warehouse (the lens catalog). Lightweight by design; the work happens inside.
+
+![Synthesis Workbench home screen](<./Docs/Visual Examples/Main Page - 5.27.26.png>)
+
+**Personal Profile.** Each job carries a status dot reflecting its readiness tier — amber for in progress, with tier-specific colors as it graduates through T1 / T2 / T3 Ready. Status is computed at read time from the values themselves; no flag is stored.
+
+![Personal Profile — jobs grouped by readiness tier](<./Docs/Visual Examples/In Progress Jobs - 5.27.26.png>)
+
+---
+
 ## What's interesting about it as a portfolio piece
 
 A few patterns worth pointing out, because they show up everywhere in the codebase:
