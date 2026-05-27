@@ -1,0 +1,1438 @@
+<!--
+  ============================================================
+  SYNTHESIS WORKBENCH  ·  v2 machine — Pages 1 & 2
+  ============================================================
+  Updated 2026-05-23. Matches synthesis.db and Synthesis Formulas v2.md.
+
+  THE MACHINE has three pages. This file is Pages 1 & 2. Page 3
+  (Synthetic Output) is now its own file — 23_synthetic_outputs.html.
+
+  TWO TABS in this workbench:
+    Tab 1 · Variables & Formulas — the 88-Index + the formula builder.
+    Tab 2 · All Formulas — a read-only dump of every formula built.
+
+  PAGE 2 — the formula builder + the formula library:
+    · TOP BUILDER — builds ONE new formula at a time: name, status, the
+      variable dropdowns + clusters, then the lens text. It only ever
+      holds a new formula in progress — never an existing one.
+    · FORMULAS DROPDOWN + REFERENCE BOX — below the builder: pick any
+      existing formula to display it read-only (variable numbers + lens
+      text) in a box, as a reference while you build. It never loads
+      into the builder. (2026-05-23.)
+
+  A LENS = id, name, status (Active/Inactive), section, inputs (page-1
+  Index numbers), lens (a paragraph), output_kinds (1+ of the 9).
+  Mirrors p2_formulas + its two wiring tables. `section` is a real
+  column on p2_formulas (added in Phase 1) — a lens is given its
+  section explicitly; it is not derived from the inputs.
+
+  CLUSTERS (new — sandbox experiment, 2026-05-23) — a cluster is a named,
+  preset bundle of Index numbers that captures one goal. In the lens
+  builder, clicking a cluster PASTES its variables into the active lens.
+  One-time paste: the lens stores the variables, never a cluster id, so
+  editing a cluster later never touches lenses already built. Clusters
+  cross sections freely. They sit alongside the loose per-section
+  dropdowns — a shortcut, not a replacement. Clusters start empty; build
+  them in-app with the "+ Save variables as cluster" button.
+
+  CONNECTED to synthesis.db (Phase 2, 2026-05-23): the 88 variables, the
+  9 output kinds, and the lens warehouse are fetched live from the
+  database over the API. The page needs the server running — in the
+  Frontend folder run `python server.py`, then open
+  http://127.0.0.1:5000. Creating, editing, and deleting a lens — and
+  saving or deleting a cluster — all write to the database now; nothing
+  is kept in the browser's localStorage any more.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Synthesis Workbench — v2</title>
+<style>
+  :root{
+    --bg:#f4f3ee; --card:#ffffff; --card-2:#faf9f6;
+    --border:#e7e5df; --border-2:#ebe9e1;
+    --text:#2d2e3a; --muted:#6a6a73; --subtle:#8a8a93; --faint:#b5b5bd;
+    --accent:#ff6d5a; --accent-hover:#f5604a; --accent-bg:#fff5f3;
+    --cf:#3b72d9;  --cf-bg:#e8f0fe;          /* Company Facts */
+    --pi:#1eb073;  --pi-bg:#e6f4ea;          /* Personal Info */
+    --st:#8b5cc7;  --st-bg:#f1eafb;          /* Story         */
+    --green:#1eb073; --green-bg:#e6f4ea; --red:#c0392b;
+    --shadow-sm:0 1px 3px rgba(0,0,0,.05);
+    --shadow-md:0 4px 12px rgba(0,0,0,.07);
+    --shadow-lg:0 16px 40px rgba(0,0,0,.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.45; padding:1.1rem;}
+
+  /* HEADER */
+  header{background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:.85rem 1.1rem; box-shadow:var(--shadow-sm);
+    display:flex; align-items:center; gap:1rem; flex-wrap:wrap;}
+  .brand h1{font-size:1.05rem; font-weight:700; letter-spacing:-.01em;}
+  .brand p{font-size:.78rem; color:var(--muted);}
+  .head-actions{margin-left:auto; display:flex; gap:.4rem;}
+  .btn{font:inherit; font-size:.78rem; font-weight:600; cursor:pointer;
+    border:1px solid var(--border); background:var(--card-2); color:var(--text);
+    padding:.42rem .7rem; border-radius:8px; transition:background .12s,transform .07s;}
+  .btn:hover{background:var(--accent-bg); border-color:var(--accent);}
+  .btn:active{transform:translateY(1px);}
+  .btn.primary{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .btn.primary:hover{background:var(--accent-hover);}
+  .btn.tiny{padding:.22rem .5rem; font-size:.72rem;}
+
+  /* CALLOUT */
+  .callout{background:#fff8f0; border:1px solid #f0d9bf; border-radius:12px;
+    padding:.7rem .9rem; margin-top:.7rem; font-size:.78rem; color:#7a5a2e;
+    display:flex; gap:.6rem; align-items:flex-start;}
+  .callout b{color:#5a4220;}
+  .callout code{background:#f3e3cd; border-radius:4px; padding:.02rem .28rem; font-size:.92em;}
+  .callout .x{margin-left:auto; cursor:pointer; border:none; background:none;
+    color:#b08a55; font-size:1rem; line-height:1; padding:.1rem .25rem;}
+
+  /* MODE BAR (the 3 pages) */
+  .modebar{display:flex; gap:.35rem; margin-top:.7rem;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; padding:.35rem; box-shadow:var(--shadow-sm);}
+  .mode-tab{flex:1; font:inherit; font-size:.82rem; font-weight:600; cursor:pointer;
+    border:none; background:none; color:var(--muted);
+    padding:.5rem .6rem; border-radius:9px; text-align:center;
+    display:flex; flex-direction:column; gap:.05rem; transition:background .12s;}
+  .mode-tab .sub{font-size:.68rem; font-weight:500; color:var(--faint);}
+  .mode-tab:hover{background:var(--card-2);}
+  .mode-tab.active{background:var(--accent); color:#fff;}
+  .mode-tab.active .sub{color:rgba(255,255,255,.82);}
+
+  #mode-content{margin-top:.7rem;}
+  /* gap between the stacked Index panel and the Formulas panel on tab 1 */
+  .panel-gap{height:.85rem;}
+  .panel{background:var(--card); border:1px solid var(--border);
+    border-radius:14px; box-shadow:var(--shadow-sm);}
+  .panel-head{padding:.7rem .9rem; border-bottom:1px solid var(--border-2);
+    display:flex; align-items:baseline; gap:.6rem; flex-wrap:wrap;}
+  .panel-head h2{font-size:.9rem; font-weight:700;}
+  .panel-head .desc{font-size:.74rem; color:var(--subtle);}
+  .panel-body{padding:.8rem .9rem;}
+
+  /* ===== MODE 1 · the 88 Index variables ===== */
+  .file-head{display:flex; align-items:center; gap:.5rem; margin:.9rem 0 .35rem;}
+  .file-head:first-child{margin-top:0;}
+  .file-head .dot{width:10px; height:10px; border-radius:3px;}
+  .file-head h3{font-size:.86rem; font-weight:700;}
+  .file-head .count{font-size:.7rem; color:var(--faint); font-weight:600;}
+  .sec-head{font-size:.68rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--subtle); margin:.55rem 0 .25rem;}
+  .var-line{display:flex; align-items:flex-start; gap:.5rem; padding:.34rem .4rem;
+    border-radius:7px; font-size:.79rem;}
+  .var-line:hover{background:var(--card-2);}
+  .var-line.flash{background:var(--accent-bg);}
+  .var-num{font-size:.67rem; font-weight:700; font-variant-numeric:tabular-nums;
+    background:var(--bg); border:1px solid var(--border-2); color:var(--subtle);
+    border-radius:5px; padding:.05rem .32rem; min-width:30px; text-align:center;
+    flex:none; margin-top:.06rem;}
+  .var-main{display:flex; flex-direction:column; gap:.13rem; min-width:0;}
+  .var-head{display:flex; align-items:center; gap:.5rem;}
+  .var-field{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.76rem;}
+  .var-rep{font-size:.62rem; color:var(--st); font-weight:700;
+    background:var(--st-bg); border-radius:4px; padding:.02rem .3rem;}
+  .var-def{font-size:.725rem; color:var(--subtle); line-height:1.45;}
+  .var-def-empty{color:var(--faint); font-style:italic;}
+
+  /* Variables tab — two stacked dropdown pickers (section + section tier) */
+  .vpick{width:224px; flex:none; display:flex; flex-direction:column; gap:.7rem;}
+  .vpick-field{display:flex; flex-direction:column; gap:.3rem;}
+  .vpick-label{font-size:.62rem; font-weight:800; letter-spacing:.1em;
+    color:var(--faint); padding-left:.12rem;}
+
+  /* ===== MODE 2 · section-focused lens builder ===== */
+  .page2{display:flex; gap:.7rem;}
+
+  /* stage */
+  .stage{flex:1; min-width:0; display:flex; flex-direction:column; gap:.7rem;}
+  .v-stage{flex:1; min-width:0;}
+
+  .refbar{background:var(--card); border:1px solid var(--border);
+    border-radius:11px; padding:.45rem .75rem; font-size:.74rem;}
+  .refbar summary{cursor:pointer; font-weight:700; color:var(--muted); font-size:.73rem;}
+  .refbar .rb-body{margin-top:.55rem; display:flex; gap:.9rem; flex-wrap:wrap;}
+  .rb-col{flex:1; min-width:240px;}
+  .rb-col h4{font-size:.66rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--subtle); margin-bottom:.3rem;}
+  .rb-col .rule{margin-bottom:.3rem;} .rb-col .rule b{color:var(--text);}
+  .rb-col .ok{margin-bottom:.18rem;} .rb-col .ok b{color:#5e3a8e;}
+
+  /* builder — top loaded */
+  .builder{border:1px solid var(--border); border-radius:13px; background:var(--card);
+    box-shadow:var(--shadow-sm); padding:.7rem .8rem;}
+
+  .builder-empty{padding:1.3rem .8rem; text-align:center; color:var(--subtle); font-size:.83rem;}
+
+  .b-row{display:flex; gap:.45rem; align-items:center; margin-bottom:.7rem;}
+  .b-name{flex:1; min-width:0; font:inherit; font-size:.92rem; font-weight:700; color:var(--text);
+    border:1px solid var(--border); border-radius:8px; padding:.38rem .55rem; background:var(--card-2);}
+  .b-name:focus{outline:2px solid var(--accent-bg); border-color:var(--accent);}
+  .status-tog{font:inherit; font-size:.73rem; font-weight:700; cursor:pointer; flex:none;
+    border:1.5px solid var(--border); border-radius:8px; padding:.36rem .62rem;
+    transition:transform .08s;}
+  .status-tog:active{transform:scale(.96);}
+  .status-tog.on{background:var(--green); color:#fff; border-color:var(--green);}
+  .status-tog.off{background:var(--card-2); color:var(--subtle);}
+
+  .b-field{margin-bottom:.7rem;}
+  .b-field:last-child{margin-bottom:0;}
+  .b-field>label{display:flex; align-items:baseline; gap:.4rem; font-size:.67rem;
+    font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;
+    margin-bottom:.32rem;}
+  .b-field>label .hint{color:var(--faint); font-weight:600; text-transform:none; letter-spacing:0;}
+  .quick-add{font:inherit; font-size:.76rem; border:1px solid var(--border); border-radius:7px;
+    padding:.34rem .44rem; background:var(--card-2); color:var(--text); width:100%;}
+  .quick-add:focus{outline:2px solid var(--accent-bg); border-color:var(--accent);}
+
+  /* inputs & output kinds — two side-by-side dropdown + chip controls */
+  .io-row{display:flex; gap:.7rem; flex-wrap:wrap; margin-bottom:.7rem;}
+  .io-col{flex:1; min-width:248px;}
+  .io-chips{display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.45rem;}
+  .io-chip{font:inherit; font-size:.71rem; font-weight:600; cursor:pointer; border:none;
+    border-radius:7px; padding:.2rem .1rem .2rem .48rem; color:#fff;
+    display:inline-flex; align-items:center; gap:.1rem; transition:transform .08s;}
+  .io-chip:hover{transform:translateY(-1px) scale(1.03);}
+  .io-chip .tn{font-weight:800; font-variant-numeric:tabular-nums; margin-right:.28rem;}
+  .io-chip .x{font-weight:800; font-size:.9rem; opacity:.7; padding:0 .36rem;}
+  .io-chip:hover .x{opacity:1;}
+  .io-chip.cf{background:var(--cf);}
+  .io-chip.pi{background:var(--pi);}
+  .io-chip.st{background:var(--st);}
+  .io-chip.ok{background:var(--st);}
+  .io-chip.none{background:var(--red);}
+  .io-empty{font-size:.72rem; color:var(--faint); font-style:italic;}
+
+  /* lens builder — four section-colored quick-add dropdowns in a row */
+  .add-row{display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:.7rem;}
+  .add-field{flex:1; min-width:165px; display:flex; flex-direction:column; gap:.26rem;}
+  .add-field.cf{--ac:var(--cf);} .add-field.pi{--ac:var(--pi);}
+  .add-field.st{--ac:var(--st);} .add-field.ok{--ac:var(--st);}
+  .add-label{display:flex; align-items:center; gap:.32rem; font-size:.63rem;
+    font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);}
+  .add-dot{width:.58rem; height:.58rem; border-radius:50%; background:var(--ac); flex:none;}
+  .add-field .quick-add{border-color:var(--ac);}
+  .add-field .quick-add:focus{outline:2px solid var(--ac);}
+
+  /* the # readout — every input variable as a deletable #-chip */
+  .readout{border:1.5px solid var(--border); border-radius:11px; background:var(--card-2);
+    padding:.5rem .6rem; margin-bottom:.7rem;}
+  .readout-head{display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:.42rem;}
+  .readout-title{display:flex; align-items:center; gap:.3rem; font-size:.65rem;
+    font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);}
+  .readout-title .rc{background:var(--accent); color:#fff; font-size:.66rem;
+    border-radius:6px; padding:0 .36rem; font-variant-numeric:tabular-nums;}
+  .copy-btn{font:inherit; font-size:.68rem; font-weight:700; cursor:pointer;
+    border:1px solid var(--border); border-radius:7px; background:var(--card);
+    color:var(--muted); padding:.2rem .5rem; transition:transform .08s;}
+  .copy-btn:hover:not(:disabled){transform:translateY(-1px);
+    border-color:var(--accent); color:var(--accent);}
+  .copy-btn:active:not(:disabled){transform:scale(.95);}
+  .copy-btn:disabled{opacity:.4; cursor:default;}
+  .readout-chips{display:flex; flex-wrap:wrap; gap:.3rem;}
+  .num-chip{font:inherit; font-size:.75rem; font-weight:800; cursor:pointer; border:none;
+    border-radius:6px; padding:.16rem .44rem; color:#fff;
+    font-variant-numeric:tabular-nums; transition:transform .08s;}
+  .num-chip:hover{transform:translateY(-1px) scale(1.07);}
+  .num-chip:active{transform:scale(.9);}
+  .num-chip.cf{background:var(--cf);} .num-chip.pi{background:var(--pi);}
+  .num-chip.st{background:var(--st);} .num-chip.none{background:var(--red);}
+  .readout-out{display:flex; flex-wrap:wrap; align-items:center; gap:.3rem;
+    margin-top:.46rem; padding-top:.42rem; border-top:1px solid var(--border);}
+  .ro-tag{font-size:.6rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--faint);}
+
+  /* clusters — preset variable bundles; click one to paste its
+     variables into the active lens (one-time paste, no link kept) */
+  .cluster-row{border:1.5px dashed var(--border); border-radius:11px;
+    background:var(--card-2); padding:.5rem .6rem; margin-bottom:.7rem;}
+  .cluster-head{display:flex; align-items:baseline; gap:.4rem; margin-bottom:.44rem;
+    flex-wrap:wrap;}
+  .cluster-label{font-size:.65rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--muted);}
+  .cluster-hint{font-size:.68rem; color:var(--faint);}
+  .cluster-btns{display:flex; flex-wrap:wrap; gap:.34rem;}
+  .cluster-btn{font:inherit; cursor:pointer; display:inline-flex; align-items:center;
+    gap:.36rem; border:1.5px solid var(--border); background:var(--card);
+    border-radius:9px; padding:.3rem .32rem .3rem .56rem;
+    transition:transform .08s, border-color .12s, box-shadow .12s;}
+  .cluster-btn:hover{transform:translateY(-1px); border-color:var(--accent);
+    box-shadow:var(--shadow-sm);}
+  .cluster-btn:active{transform:scale(.97);}
+  .cl-name{font-size:.76rem; font-weight:700; color:var(--text);}
+  .cl-dots{display:inline-flex; gap:.13rem;}
+  .cl-dot{width:.46rem; height:.46rem; border-radius:50%;}
+  .cl-dot.cf{background:var(--cf);} .cl-dot.pi{background:var(--pi);} .cl-dot.st{background:var(--st);}
+  .cl-count{font-size:.66rem; font-weight:800; font-variant-numeric:tabular-nums;
+    color:#fff; background:var(--accent); border-radius:5px; padding:.03rem .34rem;}
+  .cl-x{font-size:.95rem; font-weight:800; line-height:1; color:var(--faint);
+    padding:0 .14rem; border-radius:5px;}
+  .cl-x:hover{color:var(--red);}
+  .cluster-btn.add{border-style:dashed; color:var(--accent); background:none;
+    font-size:.74rem; font-weight:700; padding:.3rem .56rem;}
+  .cluster-btn.add:hover{background:var(--accent-bg);}
+
+  /* formula bar — the formula dropdown + a read-only reference box that
+     displays the selected formula. Independent of the builder above. */
+  .formula-bar{background:var(--card); border:1px solid var(--border);
+    border-radius:11px; padding:.55rem .7rem; box-shadow:var(--shadow-sm);}
+  .fb-row{display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;}
+  .fb-label{font-size:.66rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--muted); flex:none;}
+  .fb-select{flex:1; min-width:220px; font:inherit; font-size:.8rem; font-weight:600;
+    color:var(--text); border:1.5px solid var(--border); border-radius:8px;
+    padding:.4rem .5rem; background:var(--card-2); cursor:pointer;
+    font-variant-numeric:tabular-nums;}
+  .fb-select:focus{outline:2px solid var(--accent-bg); border-color:var(--accent);}
+  .fb-count{font-size:.66rem; font-weight:800; color:#fff; background:var(--accent);
+    border-radius:6px; padding:.06rem .4rem; font-variant-numeric:tabular-nums; flex:none;}
+  /* the read-only reference box — displays the selected formula */
+  .fb-display{margin-top:.55rem; border:1.5px solid var(--border-2); border-radius:9px;
+    background:var(--card-2); padding:.55rem .65rem;}
+  .fb-display.empty{color:var(--faint); font-style:italic; font-size:.78rem; text-align:center;}
+  .fb-d-head{display:flex; align-items:center; gap:.4rem; margin-bottom:.45rem;}
+  .fb-d-id{font-size:.66rem; font-weight:700; background:var(--text); color:#fff;
+    border-radius:5px; padding:.08rem .36rem; font-variant-numeric:tabular-nums;}
+  .fb-d-name{font-size:.84rem; font-weight:700;}
+  .fb-d-status{font-size:.6rem; font-weight:800; border-radius:5px; padding:.06rem .36rem;
+    text-transform:uppercase; letter-spacing:.04em;}
+  .fb-d-status.on{background:var(--green-bg); color:#1e7a37;}
+  .fb-d-status.off{background:#efefea; color:var(--faint);}
+  .fb-d-row{display:flex; flex-direction:column; gap:.22rem; margin-bottom:.4rem;}
+  .fb-d-row:last-child{margin-bottom:0;}
+  .fb-d-tag{font-size:.6rem; font-weight:800; color:var(--faint);
+    text-transform:uppercase; letter-spacing:.05em;}
+  .fb-vars{display:flex; flex-wrap:wrap; gap:.26rem;}
+  .fb-var{font-size:.68rem; font-weight:600; border-radius:5px; padding:.1rem .4rem;
+    font-variant-numeric:tabular-nums;}
+  .fb-var.cf{background:var(--cf-bg); color:var(--cf);}
+  .fb-var.pi{background:var(--pi-bg); color:#1e7a37;}
+  .fb-var.st{background:var(--st-bg); color:#5e3a8e;}
+  .fb-var.none{background:var(--bg); color:var(--faint);}
+  .fb-vf{font-family:ui-monospace,Menlo,Consolas,monospace; font-weight:500; opacity:.85;}
+  .fb-lens{font-size:.79rem; color:var(--text); line-height:1.5;}
+  .fb-lens.empty{color:var(--faint); font-style:italic;}
+  .fb-none{font-size:.72rem; color:var(--faint); font-style:italic;}
+
+  .b-lens{width:100%; font:inherit; font-size:.83rem; color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:.46rem .55rem; background:var(--card-2); resize:vertical; min-height:62px;}
+  .b-lens:focus{outline:2px solid var(--accent-bg); border-color:var(--accent);}
+
+  /* ===== TAB 2 · the formula dump ===== */
+  .dump-ok{font-size:.66rem; font-weight:700; border-radius:5px;
+    padding:.08rem .42rem; background:#f3e9fb; color:#5e3a8e;}
+
+  /* STATUS BAR */
+  .status-bar{margin-top:.6rem; background:var(--card); border:1px solid var(--border);
+    border-radius:10px; padding:.4rem .85rem; font-size:.73rem; color:var(--muted);
+    display:flex; gap:1rem;}
+  .status-bar b{color:var(--text);}
+  .status-bar .right{margin-left:auto; color:var(--faint);}
+
+  /* MODAL */
+  .overlay{position:fixed; inset:0; background:rgba(20,20,28,.4);
+    display:none; align-items:center; justify-content:center; z-index:50;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--card); border-radius:14px; box-shadow:var(--shadow-lg);
+    width:min(680px,93vw); max-height:85vh; display:flex; flex-direction:column;}
+  .modal-head{padding:.85rem 1rem; border-bottom:1px solid var(--border-2);
+    display:flex; align-items:center; gap:.6rem;}
+  .modal-head h3{font-size:.95rem; font-weight:700;}
+  .modal-head .x{margin-left:auto; border:none; background:none; cursor:pointer;
+    font-size:1.2rem; color:var(--subtle);}
+  .modal pre{margin:0; padding:.85rem 1rem; overflow:auto; flex:1;
+    font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.73rem;
+    line-height:1.5; color:#2d2e3a; background:#fbfbf9; white-space:pre;}
+  .modal-foot{padding:.7rem 1rem; border-top:1px solid var(--border-2);
+    display:flex; gap:.5rem; justify-content:flex-end;}
+
+  .toast{position:fixed; bottom:1.3rem; left:50%; transform:translateX(-50%);
+    background:#2d2e3a; color:#fff; font-size:.8rem; font-weight:600;
+    padding:.5rem .9rem; border-radius:9px; box-shadow:var(--shadow-lg);
+    opacity:0; transition:opacity .2s,transform .2s; pointer-events:none; z-index:60;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+
+  /* intake code — the modal that builds lenses & clusters from text */
+  .intake-body{padding:.8rem 1rem; overflow:auto; flex:1;
+    display:flex; flex-direction:column; gap:.7rem;}
+  .intake-ta{width:100%; min-height:148px; resize:vertical;
+    font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.78rem; line-height:1.5;
+    color:var(--text); background:#fbfbf9; border:1.5px solid var(--border);
+    border-radius:9px; padding:.55rem .65rem;}
+  .intake-ta:focus{outline:2px solid var(--accent-bg); border-color:var(--accent);}
+  .intake-preview{display:flex; flex-direction:column; gap:.4rem;}
+  .ip-hint{font-size:.745rem; color:var(--subtle); line-height:1.6;}
+  .ip-hint code{background:var(--bg); border:1px solid var(--border-2);
+    border-radius:4px; padding:.02rem .3rem; font-size:.93em;}
+  .ip-hint b{color:var(--muted);}
+  .ip-summary{font-size:.66rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--muted);}
+  .ip-item{display:flex; align-items:flex-start; gap:.5rem; padding:.42rem .55rem;
+    border:1px solid var(--border-2); border-radius:8px; background:var(--card-2);
+    font-size:.77rem; cursor:pointer;}
+  .ip-item.bad{border-color:#e6c4be; background:#fdf3f1; cursor:default;}
+  .ip-item.done{opacity:.62; cursor:default;}
+  .ip-item input{margin-top:.16rem; flex:none;}
+  .ip-check{flex:none; margin-top:.02rem; color:var(--green); font-weight:800;}
+  .ip-kind{font-size:.59rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+    border-radius:5px; padding:.07rem .38rem; flex:none; margin-top:.05rem;}
+  .ip-kind.lens{background:var(--st-bg); color:#5e3a8e;}
+  .ip-kind.cluster{background:var(--accent-bg); color:var(--accent);}
+  .ip-main{display:flex; flex-direction:column; gap:.13rem; min-width:0;}
+  .ip-name{font-weight:700; color:var(--text);}
+  .ip-detail{font-size:.71rem; color:var(--subtle);}
+  .ip-err{font-size:.71rem; color:var(--red); font-weight:600;}
+  .ip-code{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.66rem;
+    font-weight:700; color:var(--subtle); background:var(--bg);
+    border:1px solid var(--border-2); border-radius:5px; padding:.07rem .34rem;
+    flex:none; margin-top:.04rem;}
+  .ip-carderr{border:1px solid #e6c4be; background:#fdf3f1; border-radius:8px;
+    padding:.4rem .55rem; display:flex; flex-direction:column; gap:.18rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Synthesis Workbench</h1>
+    <p>Pages 1 &amp; 2 — the 88-Index, then the lens warehouse below it.</p>
+  </div>
+  <div class="head-actions">
+    <a class="btn" href="/" style="text-decoration:none; display:inline-flex; align-items:center">⌂ Home</a>
+    <button class="btn" id="reset-btn">↺ Reset</button>
+    <button class="btn" id="intake-btn">⌨ Intake code</button>
+    <button class="btn primary" id="export-btn">⌹ Export lenses</button>
+  </div>
+</header>
+
+<div class="callout" id="callout">
+  <span>🎮</span>
+  <div>
+    <b>Page 2 — the formula builder.</b> Up top, the <b>builder</b> constructs one
+    new <b>formula</b>: name it, add <code>variables</code> (loose or via a
+    <code>cluster</code>) and <code>output kinds</code>, then write the <code>lens</code>.
+    Below it, the <b>Formulas</b> dropdown + reference box show any existing formula
+    read-only while you build. The 88 variables and 9 output kinds are real seed
+    data; formulas start empty — a blank template you build up yourself.
+  </div>
+  <button class="x" id="callout-x" title="Dismiss">×</button>
+</div>
+
+<div class="modebar">
+  <button class="mode-tab" data-mode="build">① Variables &amp; Formulas<span class="sub">the 88-Index + the lens warehouse</span></button>
+  <button class="mode-tab" data-mode="dump">② All Formulas<span class="sub">every formula, dumped out</span></button>
+</div>
+
+<div id="mode-content"></div>
+
+<div class="status-bar" id="status-bar"></div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head">
+      <h3 id="modal-title">Export — the lens warehouse</h3>
+      <button class="x" id="modal-x" aria-label="Close">×</button>
+    </div>
+    <pre id="export-code"></pre>
+    <div class="modal-foot">
+      <button class="btn" id="copy-btn">Copy</button>
+      <button class="btn" id="download-btn">Download .yaml</button>
+      <button class="btn primary" id="close-btn">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="intake-overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="intake-title">
+    <div class="modal-head">
+      <h3 id="intake-title">Intake code — build lenses &amp; clusters from text</h3>
+      <button class="x" id="intake-x" aria-label="Close">×</button>
+    </div>
+    <div class="intake-body">
+      <textarea class="intake-ta" id="intake-ta" spellcheck="false" placeholder="card: 1.0
+
+name: Operational scale
+  inputs: 15, 16, 19, 23
+  clusters: 1
+  outputs: scale-context, capability
+  text: How large and operationally complex the company was."></textarea>
+      <div class="intake-preview" id="intake-preview"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="intake-preview-btn">Preview</button>
+      <button class="btn primary" id="intake-create-btn" disabled>Create approved</button>
+      <button class="btn" id="intake-close-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1 · DATA — the 88 variables, 9 output kinds, and lenses are
+   fetched live from synthesis.db over the API (see boot()).
+   ============================================================ */
+
+/* the 88 Index variables, the 9 output kinds, and the lens warehouse are
+   no longer hard-coded — they are fetched from synthesis.db over the API
+   in boot() (at the foot of this file). These start empty and are filled
+   in once, on boot, before the first render(). */
+let P1_VARIABLES = [];   /* the flat 88: [{id,field,file,section,repeats,definition}] */
+let P1_BY_ID     = {};   /* id -> variable, for quick lookup */
+let P1_GROUPS    = [];   /* the 88 regrouped into file -> section tiers */
+let OUTPUT_KINDS = [];   /* the 9: [{id,name,description}] */
+let OK_BY_ID     = {};   /* id -> output kind */
+
+/* rebuild the file -> section tier list from the flat variable list. The
+   API returns the 88 in id order, so first-seen order is the correct tier
+   order; every variable in a tier carries that tier's `repeats` flag. */
+function buildP1Groups(vars){
+  const groups = [], seen = {};
+  vars.forEach(v=>{
+    const key = v.file + ' || ' + v.section;
+    if(!seen[key]){
+      seen[key] = {file:v.file, section:v.section, repeats:v.repeats, fields:[]};
+      groups.push(seen[key]);
+    }
+    seen[key].fields.push(v.field);
+  });
+  return groups;
+}
+
+/* the 4 house rules — Synthesis Formulas v2.md, section 3 */
+const HOUSE_RULES = [
+  {title:'Firewall', text:'The Story internal field (#85) never enters a synthetic output. Lenses read the external side (#84) only.'},
+  {title:"Certifications are the company's", text:'#37–46 describe the company’s audited systems, never a personal credential — "operated within" framing.'},
+  {title:'No compensation, hours, or load', text:'Pay, hours, and workload never surface. Capacity is shown by facts, never by numbers.'},
+  {title:'A lens records; page 3 decides wording', text:'A lens captures the honest figure. It never picks the final phrasing — that is page 3.'},
+];
+
+/* lenses and clusters are not seeded here — both load from the database
+   over the API in boot(). A lens is { id, name, status, section,
+   inputs:[Index #s], lens, output_kinds:[#s] }; a cluster is the
+   simpler { id, name, variables:[Index #s] }. */
+
+const FILES = ['Company Facts','Personal Info','Story'];
+const FILE_KEY = {'Company Facts':'cf','Personal Info':'pi','Story':'st'};
+
+/* ============================================================
+   2 · STATE  (the in-memory DB. Both lenses and clusters now live
+   in the database; the page holds them in memory only for the
+   session, and boot() fills them fresh from the database on every
+   launch. Nothing is kept in localStorage any more.)
+   ============================================================ */
+let DB = { lenses: [], clusters: [] };
+let ui = { mode:'build', section:'Company Facts', subsection:'Disclosure', activeVar:1, activeLens:null, refLens:null };
+
+const activeLens = () => DB.lenses.find(l=>l.id===ui.activeLens);
+
+/* ---- writes go to the database over the API -----------------------
+   A change shows on screen instantly (the in-memory DB), then is sent
+   to the database: a new lens POSTs, an edit PUTs, a deletion DELETEs;
+   a cluster POSTs when it is saved and DELETEs when it is removed. If
+   a write fails, a toast says so. */
+async function apiCreateLens(fields){
+  const r = await fetch('/api/lenses', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(fields)});
+  if(!r.ok) throw new Error('the server refused the new lens ('+r.status+')');
+  return r.json();              /* the new lens, with the id the database gave it */
+}
+async function apiDeleteLens(id){
+  const r = await fetch('/api/lenses/'+id, {method:'DELETE'});
+  if(!r.ok) throw new Error('the server could not delete it ('+r.status+')');
+}
+/* PUT the lens currently in the builder. Fire-and-forget: the screen
+   already shows the change, so on success there is nothing to do; on
+   failure a toast warns that it did not reach the database. */
+function persistActive(){
+  const L=activeLens();
+  if(!L) return;
+  fetch('/api/lenses/'+L.id, {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(L)})
+    .then(r=>{ if(!r.ok) throw new Error('save failed ('+r.status+')'); })
+    .catch(e=>toast('⚠ '+e.message));
+}
+/* clusters: a save POSTs, a delete DELETEs — the lens pattern, minus
+   the in-place edit (the workbench never edits a cluster). */
+async function apiCreateCluster(name, variables, intake_code){
+  const r = await fetch('/api/clusters', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name, variables, intake_code})});
+  if(!r.ok) throw new Error('the server refused the new cluster ('+r.status+')');
+  return r.json();              /* the new cluster, with the id the database gave it */
+}
+async function apiDeleteCluster(id){
+  const r = await fetch('/api/clusters/'+id, {method:'DELETE'});
+  if(!r.ok) throw new Error('the server could not delete it ('+r.status+')');
+}
+
+/* ============================================================
+   3 · RENDER — dispatch
+   ============================================================ */
+const content = document.getElementById('mode-content');
+function render(){
+  document.querySelectorAll('.mode-tab').forEach(t=>
+    t.classList.toggle('active', t.dataset.mode===ui.mode));
+  if(ui.mode==='dump') renderFormulaDump();
+  else renderBuild();                 /* the merged Variables + Formulas page */
+  updateStatus();
+}
+
+/* the merged tab — the 88-Index panel stacked above the lens warehouse.
+   Both panels build into #mode-content in one pass, so they scroll as one
+   page. variablesPanelHTML / formulasPanelHTML each return their panel's
+   markup; this just concatenates them with a gap between. */
+function renderBuild(){
+  content.innerHTML =
+    variablesPanelHTML() + `<div class="panel-gap"></div>` + formulasPanelHTML();
+}
+/* kept under the names the event handlers already call — each simply
+   rebuilds the whole merged page (cheap; this tool is small) */
+function renderVariables(){ renderBuild(); }
+function renderFormulas(){ renderBuild(); }
+
+/* ---- MODE 1 · the 88 Index variables — drill down section -> sub-section ---- */
+
+/* the sub-sections of a file, in Index order (e.g. Company Facts ->
+   Disclosure, C1 Identity, C1 Ownership & Industry, ...) */
+function subSectionsOf(file){
+  return P1_GROUPS.filter(g=>g.file===file).map(g=>g.section);
+}
+/* the id of the first variable inside a given section + tier — used to
+   land the VARIABLE dropdown on a sensible default whenever the tier moves */
+function firstVarIdOf(file, section){
+  const v = P1_VARIABLES.find(x=>x.file===file && x.section===section);
+  return v ? v.id : null;
+}
+
+/* ---- TAB 1, top panel · the 88-Index — returns its panel markup ---- */
+function variablesPanelHTML(){
+  const file = ui.section;
+  const subs = subSectionsOf(file);
+  if(!subs.includes(ui.subsection)) ui.subsection = subs[0];   /* keep state valid */
+  const sub  = ui.subsection;
+  const grp  = P1_GROUPS.find(g=>g.file===file && g.section===sub);
+  const vars = P1_VARIABLES.filter(x=>x.file===file && x.section===sub);
+  const total = P1_VARIABLES.filter(x=>x.file===file).length;
+  /* keep the active variable valid — if it is not in this tier, fall back
+     to the tier's first variable so the VARIABLE dropdown is never stale */
+  if(!vars.some(x=>x.id===ui.activeVar)) ui.activeVar = vars.length ? vars[0].id : null;
+  const av = P1_BY_ID[ui.activeVar];
+
+  /* dropdown 1 — the section (Company Facts / Personal Info / Story) */
+  const secOpts = FILES.map((f,i)=>
+    `<option value="${escAttr(f)}" ${f===file?'selected':''}>${i+1} · ${escHtml(f)}</option>`).join('');
+  /* dropdown 2 — the section tier (sub-section), each with its variable count */
+  const subOpts = subs.map(s=>{
+    const n = P1_VARIABLES.filter(x=>x.file===file && x.section===s).length;
+    return `<option value="${escAttr(s)}" ${s===sub?'selected':''}>${escHtml(s)} (${n})</option>`;
+  }).join('');
+  /* dropdown 3 — the single variable inside that tier, by index number */
+  const varOpts = vars.map(x=>
+    `<option value="${x.id}" ${x.id===ui.activeVar?'selected':''}>${x.id} · ${escHtml(x.field)}</option>`).join('');
+
+  /* the body — exactly one variable's definition card at a time */
+  let body='';
+  if(av){
+    body = `<div class="var-line" id="var-${av.id}">`+
+      `<span class="var-num">${av.id}</span>`+
+      `<div class="var-main">`+
+        `<div class="var-head">`+
+          `<span class="var-field">${escHtml(av.field)}</span>`+
+          (av.repeats?'<span class="var-rep">repeats</span>':'')+
+        `</div>`+
+        (av.definition
+          ? `<div class="var-def">${escHtml(av.definition)}</div>`
+          : `<div class="var-def var-def-empty">not yet defined</div>`)+
+      `</div>`+
+    `</div>`;
+  }
+
+  return `
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Page 1 · the 88-Index</h2>
+        <span class="desc">pick a section, tier, and variable — one definition at a time</span>
+      </div>
+      <div class="panel-body">
+        <div class="page2">
+          <div class="vpick">
+            <div class="vpick-field">
+              <label class="vpick-label">SECTION</label>
+              <select class="quick-add" data-bf="sec-pick">${secOpts}</select>
+            </div>
+            <div class="vpick-field">
+              <label class="vpick-label">SECTION TIER</label>
+              <select class="quick-add" data-bf="sub-pick">${subOpts}</select>
+            </div>
+            <div class="vpick-field">
+              <label class="vpick-label">VARIABLE</label>
+              <select class="quick-add" data-bf="var-pick">${varOpts}</select>
+            </div>
+          </div>
+          <div class="v-stage" style="--sec:var(--${FILE_KEY[file]})">
+            <div class="file-head">
+              <span class="dot" style="background:var(--${FILE_KEY[file]})"></span>
+              <h3>${escHtml(file)}</h3>
+              <span class="count">${subs.length} tiers · ${total} variables</span>
+            </div>
+            <div class="sec-head">${escHtml(sub)}${grp&&grp.repeats?' · per-entry':''}</div>
+            ${body}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ---- MODE 2 · the section-focused lens builder ---- */
+function chipClassFor(varId){
+  const v=P1_BY_ID[varId];
+  return v ? FILE_KEY[v.file] : 'none';
+}
+/* options for one section's quick-add dropdown — only variables NOT yet in
+   the active lens, so each list shrinks as you pick. file = the section. */
+function sectionVarOptions(file, L){
+  return P1_VARIABLES
+    .filter(v=>v.file===file && !(L && L.inputs.includes(v.id)))
+    .map(v=>`<option value="${v.id}">#${v.id} · ${escHtml(v.field)}</option>`)
+    .join('');
+}
+/* options for the output-kind dropdown — only kinds not yet on the lens */
+function okAddOptions(L){
+  return OUTPUT_KINDS
+    .filter(k=>!(L && L.output_kinds.includes(k.id)))
+    .map(k=>`<option value="${k.id}">${escHtml(k.name)}</option>`)
+    .join('');
+}
+/* ---- clusters — a cluster is a saved set of Index numbers that capture
+   one goal. Clicking it PASTES those variables into the active lens. The
+   paste is one-time: the lens stores variables, never a cluster id, so a
+   later cluster edit never touches lenses already built. Clusters are
+   global — they cross sections freely. ---- */
+function clusterSectionDots(c){
+  const present = new Set(c.variables.map(id=>chipClassFor(id)));
+  return ['cf','pi','st'].filter(k=>present.has(k))
+    .map(k=>`<span class="cl-dot ${k}"></span>`).join('');
+}
+function clusterTip(c){
+  return 'Pastes '+c.variables.length+': '+c.variables.map(id=>{
+    const v=P1_BY_ID[id]; return v?`#${id} ${v.field}`:`#${id}`;
+  }).join(' · ');
+}
+function clusterRowHTML(){
+  const btns = DB.clusters.map(c=>
+    `<button class="cluster-btn" data-action="paste-cluster" data-cid="${c.id}" `+
+    `title="${escAttr(clusterTip(c))}">`+
+      `<span class="cl-name">${escHtml(c.name)}</span>`+
+      `<span class="cl-dots">${clusterSectionDots(c)}</span>`+
+      `<span class="cl-count">${c.variables.length}</span>`+
+      `<span class="cl-x" data-action="del-cluster" data-cid="${c.id}" title="delete this cluster">×</span>`+
+    `</button>`).join('');
+  return `<div class="cluster-row">
+    <div class="cluster-head">
+      <span class="cluster-label">Clusters</span>
+      <span class="cluster-hint">preset variable bundles — click one to paste its variables into this lens</span>
+    </div>
+    <div class="cluster-btns">
+      ${btns || '<span class="io-empty">no clusters yet — add variables to a lens, then save them as a cluster</span>'}
+      <button class="cluster-btn add" data-action="save-cluster" title="save this lens's current variables as a new cluster">+ Save variables as cluster</button>
+    </div>
+  </div>`;
+}
+function builderHTML(){
+  const L = activeLens();
+  if(!L){
+    return `<div class="builder-empty">Nothing in the builder yet — click “+ New formula” below to start one. The Formulas dropdown below is a read-only reference, not a way into the builder.</div>`;
+  }
+
+  /* the # readout — input variables as deletable #-chips, sorted ascending
+     and colored by section; click a chip to drop that variable */
+  const numChips = L.inputs.length
+    ? [...L.inputs].sort((a,b)=>a-b).map(id=>{
+        const v=P1_BY_ID[id];
+        return `<button class="num-chip ${v?FILE_KEY[v.file]:'none'}" data-action="remove-input" `+
+               `data-vid="${id}" title="${v?escAttr(v.field):'unknown'} — click to remove">#${id}</button>`;
+      }).join('')
+    : `<span class="io-empty">no variables yet — add them from the dropdowns above</span>`;
+  /* the output kinds this lens yields — also removable */
+  const okChips = L.output_kinds.length
+    ? L.output_kinds.map(id=>
+        `<button class="io-chip ok" data-action="remove-output" data-ok="${id}" title="click to remove">`+
+        `${OK_BY_ID[id]?escHtml(OK_BY_ID[id].name):id}<span class="x">×</span></button>`).join('')
+    : `<span class="io-empty">none yet</span>`;
+
+  return `<div class="b-row">
+      <input class="b-name" data-bf="name" value="${escAttr(L.name)}" placeholder="formula name">
+      <button class="status-tog ${L.status==='Active'?'on':'off'}" data-action="toggle-status">${L.status}</button>
+      <button class="btn tiny" data-action="del-lens">Delete</button>
+    </div>
+    <div class="add-row">
+      <div class="add-field cf">
+        <label class="add-label"><span class="add-dot"></span>Company Facts</label>
+        <select class="quick-add" data-bf="quickadd"><option value="">+ add a variable…</option>${sectionVarOptions('Company Facts',L)}</select>
+      </div>
+      <div class="add-field pi">
+        <label class="add-label"><span class="add-dot"></span>Personal Info</label>
+        <select class="quick-add" data-bf="quickadd"><option value="">+ add a variable…</option>${sectionVarOptions('Personal Info',L)}</select>
+      </div>
+      <div class="add-field st">
+        <label class="add-label"><span class="add-dot"></span>Story</label>
+        <select class="quick-add" data-bf="quickadd"><option value="">+ add a variable…</option>${sectionVarOptions('Story',L)}</select>
+      </div>
+      <div class="add-field ok">
+        <label class="add-label"><span class="add-dot"></span>Output kind</label>
+        <select class="quick-add" data-bf="okadd"><option value="">+ add an output…</option>${okAddOptions(L)}</select>
+      </div>
+    </div>
+    ${clusterRowHTML()}
+    <div class="readout">
+      <div class="readout-head">
+        <span class="readout-title">Variables in this lens<span class="rc">${L.inputs.length}</span></span>
+        <button class="copy-btn" data-action="copy-nums" ${L.inputs.length?'':'disabled'}>⧉ copy #'s</button>
+      </div>
+      <div class="readout-chips">${numChips}</div>
+      <div class="readout-out"><span class="ro-tag">yields</span>${okChips}</div>
+    </div>
+    <div class="b-field">
+      <label>Lens <span class="hint">· the one defined way of looking at them — this IS the formula</span></label>
+      <textarea class="b-lens" data-bf="lens" placeholder="plain English, one paragraph">${escHtml(L.lens)}</textarea>
+    </div>`;
+}
+/* the read-only reference box — displays the formula picked in the
+   dropdown: its variable numbers and lens description. Independent of
+   the builder — a reference to consult while building a new formula. */
+function refBoxHTML(){
+  const L = DB.lenses.find(l=>l.id===ui.refLens);
+  if(!L) return `<div class="fb-display empty">No formula to display — build one with “+ New formula”.</div>`;
+  const vars = L.inputs.length
+    ? [...L.inputs].sort((a,b)=>a-b).map(id=>{
+        const v=P1_BY_ID[id];
+        return `<span class="fb-var ${v?FILE_KEY[v.file]:'none'}">#${id}${v?` <span class="fb-vf">${escHtml(v.field)}</span>`:''}</span>`;
+      }).join('')
+    : `<span class="fb-none">no variables</span>`;
+  return `<div class="fb-display">
+    <div class="fb-d-head">
+      <span class="fb-d-id">#${L.id}</span>
+      <span class="fb-d-name">${escHtml(L.name||'(unnamed)')}</span>
+      <span class="fb-d-status ${L.status==='Active'?'on':'off'}">${L.status}</span>
+    </div>
+    <div class="fb-d-row">
+      <span class="fb-d-tag">Variable numbers</span>
+      <div class="fb-vars">${vars}</div>
+    </div>
+    <div class="fb-d-row">
+      <span class="fb-d-tag">Lens description</span>
+      <div class="fb-lens ${L.lens?'':'empty'}">${L.lens?escHtml(L.lens):'no lens description yet'}</div>
+    </div>
+  </div>`;
+}
+function formulaBarHTML(){
+  const opts = [...DB.lenses].sort((a,b)=>a.id-b.id).map(L=>
+    `<option value="${L.id}" ${L.id===ui.refLens?'selected':''}>`+
+    `#${L.id} · ${escHtml(L.name||'(unnamed)')}${L.status==='Inactive'?'  ·  inactive':''}</option>`).join('');
+  return `<div class="formula-bar">
+    <div class="fb-row">
+      <span class="fb-label">Formulas</span>
+      <select class="fb-select" data-bf="formula-pick" ${DB.lenses.length?'':'disabled'}>${
+        DB.lenses.length ? opts : '<option>— no formulas yet —</option>'
+      }</select>
+      <span class="fb-count" title="total formulas">${DB.lenses.length}</span>
+      <button class="btn tiny" data-action="new-lens">+ New formula</button>
+    </div>
+    ${refBoxHTML()}
+  </div>`;
+}
+function renderFormulaBar(){
+  const fb = content.querySelector('.formula-bar');
+  if(fb) fb.outerHTML = formulaBarHTML();
+}
+/* partial re-render of just the builder card — used after add/remove so the
+   page scroll stays put and building a lens feels fluid */
+function renderBuilder(){
+  const b = content.querySelector('.builder');
+  if(b) b.innerHTML = builderHTML();
+}
+/* clipboard copy, with a fallback for environments without the async API */
+function copyText(s){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(s).catch(()=>fallbackCopy(s));
+  } else { fallbackCopy(s); }
+}
+function fallbackCopy(s){
+  const ta=document.createElement('textarea');
+  ta.value=s; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+}
+/* ---- TAB 1, lower panel · the lens warehouse — returns its panel markup ---- */
+function formulasPanelHTML(){
+  /* the builder holds only an in-progress NEW formula (null = nothing yet);
+     drop a dangling id but never auto-pick — it stays empty by default */
+  if(ui.activeLens!=null && !DB.lenses.some(l=>l.id===ui.activeLens)) ui.activeLens=null;
+  /* the reference box follows the dropdown — default it to the first formula */
+  if(!DB.lenses.some(l=>l.id===ui.refLens)){
+    const sorted=[...DB.lenses].sort((a,b)=>a.id-b.id);
+    ui.refLens = sorted.length?sorted[0].id:null;
+  }
+
+  const rules = HOUSE_RULES.map(r=>`<div class="rule"><b>${escHtml(r.title)}.</b> ${escHtml(r.text)}</div>`).join('');
+  const oks = OUTPUT_KINDS.map(k=>`<div class="ok"><b>${k.name}</b> — ${escHtml(k.description)}</div>`).join('');
+
+  return `
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Page 2 · the lens warehouse</h2>
+        <span class="desc">a catalog — it computes nothing; page 3 does the judging</span>
+      </div>
+      <div class="panel-body">
+        <div class="page2">
+          <div class="stage" style="--sec:var(--${FILE_KEY[ui.section]})">
+            <div class="builder">${builderHTML()}</div>
+            ${formulaBarHTML()}
+            <details class="refbar">
+              <summary>House rules &amp; the 9 output kinds</summary>
+              <div class="rb-body">
+                <div class="rb-col"><h4>House rules — every lens obeys these</h4>${rules}</div>
+                <div class="rb-col"><h4>Output kinds — the tagging vocabulary</h4>${oks}</div>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ---- TAB 2 · the formula dump — every formula in the warehouse, full
+   detail, read-only. A complete mirror of tab 1's formulas, all at once.
+   (Synthetic Output is now its own file: 23_synthetic_outputs.html.) ---- */
+function renderFormulaDump(){
+  const lenses = [...DB.lenses].sort((a,b)=>a.id-b.id);
+  const cards = lenses.map(L=>{
+    const vars = L.inputs.length
+      ? [...L.inputs].sort((a,b)=>a-b).map(id=>{
+          const v=P1_BY_ID[id];
+          return `<span class="fb-var ${v?FILE_KEY[v.file]:'none'}">#${id}${v?` <span class="fb-vf">${escHtml(v.field)}</span>`:''}</span>`;
+        }).join('')
+      : `<span class="fb-none">no variables</span>`;
+    const oks = L.output_kinds.length
+      ? L.output_kinds.map(id=>`<span class="dump-ok">${OK_BY_ID[id]?escHtml(OK_BY_ID[id].name):id}</span>`).join('')
+      : `<span class="fb-none">no output kind</span>`;
+    return `<div class="fb-display">
+      <div class="fb-d-head">
+        <span class="fb-d-id">#${L.id}</span>
+        <span class="fb-d-name">${escHtml(L.name||'(unnamed)')}</span>
+        <span class="fb-d-status ${L.status==='Active'?'on':'off'}">${L.status}</span>
+      </div>
+      <div class="fb-d-row"><span class="fb-d-tag">Variable numbers</span><div class="fb-vars">${vars}</div></div>
+      <div class="fb-d-row"><span class="fb-d-tag">Lens description</span>
+        <div class="fb-lens ${L.lens?'':'empty'}">${L.lens?escHtml(L.lens):'no lens written yet'}</div></div>
+      <div class="fb-d-row"><span class="fb-d-tag">Output kinds</span><div class="fb-vars">${oks}</div></div>
+    </div>`;
+  }).join('');
+  const body = lenses.length
+    ? cards
+    : `<div class="builder-empty">No formulas yet — build them on the “Variables &amp; Formulas” tab. Every formula you create dumps out here, in full.</div>`;
+  content.innerHTML = `
+    <div class="panel">
+      <div class="panel-head">
+        <h2>All Formulas · the dump</h2>
+        <span class="desc">${lenses.length} formula${lenses.length===1?'':'s'} — every one, full detail, read-only</span>
+      </div>
+      <div class="panel-body">${body}</div>
+    </div>`;
+}
+
+/* ============================================================
+   4 · EVENTS — delegated input + click on #mode-content
+   ============================================================ */
+function onField(e){
+  const t=e.target;
+  if(t.dataset.bf==='sec-pick'){                 /* Variables tab — section dropdown */
+    ui.section=t.value;
+    ui.subsection=subSectionsOf(ui.section)[0];          /* land on the first tier */
+    ui.activeVar=firstVarIdOf(ui.section, ui.subsection);/* and its first variable */
+    render();
+    return;
+  }
+  if(t.dataset.bf==='sub-pick'){                 /* Variables tab — section-tier dropdown */
+    ui.subsection=t.value;
+    ui.activeVar=firstVarIdOf(ui.section, ui.subsection);/* reset to the tier's first variable */
+    render();
+    return;
+  }
+  if(t.dataset.bf==='var-pick'){                 /* Variables tab — variable dropdown */
+    ui.activeVar=Number(t.value);
+    render();
+    return;
+  }
+  if(t.dataset.bf==='formula-pick'){             /* Formulas dropdown — feeds the read-only reference box only */
+    ui.refLens=Number(t.value);
+    renderFormulaBar();
+    return;
+  }
+  if(t.dataset.bf==='name'){
+    const L=activeLens();
+    if(L){ L.name=t.value; renderFormulaBar(); if(e.type==='change') persistActive(); }   /* live label; save on blur */
+    return;
+  }
+  if(t.dataset.bf==='lens'){
+    const L=activeLens(); if(L){ L.lens=t.value; if(e.type==='change') persistActive(); }
+    return;
+  }
+  if(t.dataset.bf==='quickadd'){
+    const vid=Number(t.value); if(!vid) return;
+    const L=activeLens();
+    if(L && !L.inputs.includes(vid)){ L.inputs.push(vid); persistActive(); renderBuilder(); }
+    return;
+  }
+  if(t.dataset.bf==='okadd'){
+    const ok=Number(t.value); if(!ok) return;
+    const L=activeLens();
+    if(L && !L.output_kinds.includes(ok)){ L.output_kinds.push(ok); persistActive(); renderBuilder(); }
+    return;
+  }
+}
+content.addEventListener('input', onField);
+content.addEventListener('change', onField);
+
+content.addEventListener('click', e=>{
+  const act=e.target.closest('[data-action]'); if(!act) return;
+  const a=act.dataset.action;
+
+  if(a==='new-lens'){
+    apiCreateLens({name:'New formula', status:'Active', section:ui.section,
+                   inputs:[], lens:'', output_kinds:[1]})
+      .then(lens=>{
+        DB.lenses.push(lens);          /* lens carries the id the database assigned */
+        ui.activeLens=lens.id; render();
+        content.querySelector('.builder')?.scrollIntoView({behavior:'smooth',block:'start'});
+        toast('Formula #'+lens.id+' added');
+      })
+      .catch(e=>toast('⚠ could not create the formula — '+e.message));
+  }
+  else if(a==='del-lens'){
+    const id=ui.activeLens;
+    if(id==null) return;
+    apiDeleteLens(id)
+      .then(()=>{
+        DB.lenses=DB.lenses.filter(l=>l.id!==id);
+        ui.activeLens=null; render(); toast('Formula removed');
+      })
+      .catch(e=>toast('⚠ could not delete the formula — '+e.message));
+  }
+  else if(a==='toggle-status'){
+    const L=activeLens(); if(L){ L.status=L.status==='Active'?'Inactive':'Active'; persistActive(); renderBuilder(); renderFormulaBar(); updateStatus(); }
+  }
+  else if(a==='remove-input'){
+    const L=activeLens(); if(!L) return;
+    L.inputs=L.inputs.filter(x=>x!==Number(act.dataset.vid));
+    persistActive(); renderBuilder();
+  }
+  else if(a==='remove-output'){
+    const L=activeLens(); if(!L) return;
+    if(L.output_kinds.length<=1){ toast('A lens needs at least one output kind'); return; }
+    L.output_kinds=L.output_kinds.filter(x=>x!==Number(act.dataset.ok));
+    persistActive(); renderBuilder();
+  }
+  else if(a==='copy-nums'){
+    const L=activeLens(); if(!L||!L.inputs.length) return;
+    const nums=[...L.inputs].sort((x,y)=>x-y).join(', ');
+    copyText(nums);
+    toast('Copied '+L.inputs.length+' variable #'+(L.inputs.length===1?'':'s'));
+  }
+  else if(a==='paste-cluster'){
+    const L=activeLens(); if(!L) return;
+    const c=DB.clusters.find(x=>x.id===Number(act.dataset.cid)); if(!c) return;
+    let added=0;
+    c.variables.forEach(id=>{ if(!L.inputs.includes(id)){ L.inputs.push(id); added++; } });
+    persistActive(); renderBuilder();
+    toast(added
+      ? 'Pasted '+added+' variable'+(added===1?'':'s')+' from "'+c.name+'"'
+      : '"'+c.name+'" — every variable was already in this lens');
+  }
+  else if(a==='del-cluster'){
+    const cid=Number(act.dataset.cid);
+    const c=DB.clusters.find(x=>x.id===cid);
+    apiDeleteCluster(cid)
+      .then(()=>{
+        DB.clusters=DB.clusters.filter(x=>x.id!==cid);
+        renderBuilder();
+        toast(c?'Cluster "'+c.name+'" removed':'Cluster removed');
+      })
+      .catch(e=>toast('⚠ could not delete the cluster — '+e.message));
+  }
+  else if(a==='save-cluster'){
+    const L=activeLens(); if(!L) return;
+    if(!L.inputs.length){ toast('Add variables to this lens first — then save them as a cluster'); return; }
+    const name=(prompt('Name this cluster — what goal do these '+L.inputs.length+' variables capture?')||'').trim();
+    if(!name) return;
+    apiCreateCluster(name, [...L.inputs].sort((x,y)=>x-y))
+      .then(cluster=>{
+        DB.clusters.push(cluster);   /* cluster carries the id the database assigned */
+        renderBuilder(); toast('Cluster saved: "'+name+'"');
+      })
+      .catch(e=>toast('⚠ could not save the cluster — '+e.message));
+  }
+});
+
+document.querySelectorAll('.mode-tab').forEach(t=>
+  t.addEventListener('click', ()=>{ ui.mode=t.dataset.mode; render(); }));
+
+/* ============================================================
+   5 · YAML EXPORT — the lens warehouse
+   ============================================================ */
+function q(s){ return '"'+String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"'; }
+function buildYAML(){
+  let o='# ============================================================\n';
+  o+='# SYNTHESIS WORKBENCH — lens warehouse export\n';
+  o+='# generated '+new Date().toISOString()+'\n';
+  o+='# shape matches synthesis.db: p2_formulas + the two wiring tables\n';
+  o+='# (section is a makeshift UI grouping — not a database column)\n';
+  o+='# ============================================================\n\nlenses:\n';
+  DB.lenses.forEach(L=>{
+    o+='  - id:      '+L.id+'\n';
+    o+='    name:    '+q(L.name)+'\n';
+    o+='    status:  '+L.status+'\n';
+    o+='    section: '+q(L.section)+'\n';
+    o+='    inputs:  ['+L.inputs.join(', ')+']   # p2_formula_inputs -> variable_id\n';
+    o+='    lens:    |\n'+L.lens.split('\n').map(x=>'      '+x).join('\n')+'\n';
+    o+='    output_kinds: ['+L.output_kinds.map(id=>OK_BY_ID[id]?OK_BY_ID[id].name:id).join(', ')+']\n';
+  });
+  return o;
+}
+const overlay=document.getElementById('overlay');
+document.getElementById('export-btn').addEventListener('click',()=>{
+  document.getElementById('export-code').textContent=buildYAML();
+  overlay.classList.add('open');
+});
+function closeModal(){ overlay.classList.remove('open'); }
+document.getElementById('modal-x').addEventListener('click',closeModal);
+document.getElementById('close-btn').addEventListener('click',closeModal);
+overlay.addEventListener('click',e=>{ if(e.target===overlay) closeModal(); });
+document.getElementById('copy-btn').addEventListener('click',()=>{
+  navigator.clipboard.writeText(document.getElementById('export-code').textContent)
+    .then(()=>toast('Copied')).catch(()=>toast('Copy failed — select manually'));
+});
+document.getElementById('download-btn').addEventListener('click',()=>{
+  const blob=new Blob([document.getElementById('export-code').textContent],{type:'text/yaml'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='lens-warehouse.yaml';
+  a.click(); URL.revokeObjectURL(a.href); toast('Downloaded lens-warehouse.yaml');
+});
+
+/* ============================================================
+   5a · INTAKE CODE — build lenses & clusters from a card
+   A card is a text block: a "card:" code on top, then a list of
+   entries, every line written "key: value". There is NO AI here —
+   parseIntake() below is the whole deterministic engine. A
+   "card: 1.0" mass-produces formulas; "card: 2.0" mass-produces
+   clusters. Preview shows what each entry would create, with its
+   traceability code; Create POSTs the ticked ones to the database.
+   ============================================================ */
+let intakeParse = { cardCode:null, family:null, items:[], cardErrors:[] };
+
+/* the card families. Digit one of the card code picks one; digits
+   after it are reserved. Families 3 & 4 (edit, delete) come later. */
+const INTAKE_FAMILIES = {
+  '1': { label:'formula', fields:['inputs','clusters','outputs','section','status','text'] },
+  '2': { label:'cluster', fields:['vars'] }
+};
+
+const INTAKE_HINT =
+  '<div class="ip-hint">Paste a <b>card</b> above, then press <b>Preview</b>.'+
+  '<br><br>Every line is <code>key: value</code>. The card opens with '+
+  '<code>card: 1.0</code> (a formula card) or <code>card: 2.0</code> (a '+
+  'cluster card). <code>name:</code> starts an entry; the lines under it set '+
+  'its fields.<br><b>Formula fields:</b> <code>inputs:</code> (Index #s), '+
+  '<code>clusters:</code> (cluster #ids — their variables fold in), '+
+  '<code>outputs:</code> (output-kind names), <code>section:</code>, '+
+  '<code>status:</code>, <code>text:</code>.<br><b>Cluster field:</b> '+
+  '<code>vars:</code> (Index #s).<br>Indentation is optional; blank lines '+
+  'and <code>#</code> comments are ignored.</div>';
+
+/* parse a card into { cardCode, family, items[], cardErrors[] }. Every
+   item carries its own errors[]; a clean item has errors.length === 0.
+   The parser never throws — bad input becomes a flagged error. The one
+   hard rule: every line must be "key: value". */
+function parseIntake(src){
+  const out = { cardCode:null, family:null, items:[], cardErrors:[] };
+  let cur = null;
+  (src||'').split(/\r?\n/).forEach((raw,i)=>{
+    const ln=i+1, line=raw.trim();
+    if(!line || line[0]==='#') return;                  /* blank / comment */
+    const ci=line.indexOf(':');
+    if(ci<0){
+      (cur?cur.errors:out.cardErrors).push(
+        'line '+ln+': not a "key: value" line — every line needs a colon');
+      return;
+    }
+    const key=line.slice(0,ci).trim().toLowerCase();
+    const val=line.slice(ci+1).trim();
+
+    if(key==='card'){
+      if(out.cardCode!==null){
+        out.cardErrors.push('line '+ln+': a second "card:" line — a card has one code');
+        return;
+      }
+      out.cardCode=val;
+      const m=val.match(/^(\d+)\.(\d+)$/);
+      if(!m) out.cardErrors.push('line '+ln+': the card code must look like "1.0" or "2.0"');
+      else if(!INTAKE_FAMILIES[m[1]]) out.cardErrors.push(
+        'line '+ln+': "'+m[1]+'" is not a card family — 1 = formula, 2 = cluster');
+      else out.family=m[1];
+      return;
+    }
+    if(out.cardCode===null){
+      out.cardErrors.push('line '+ln+': the card must open with a "card:" line, e.g. "card: 1.0"');
+      return;
+    }
+    if(key==='name'){
+      cur={ name:val, errors:[], line:ln };
+      if(out.family==='1') Object.assign(cur,
+        {inputs:[], clusters:[], output_kinds:[], section:'', status:'Active', text:''});
+      else if(out.family==='2') cur.vars=[];
+      if(!val) cur.errors.push('line '+ln+': this entry has an empty name');
+      out.items.push(cur);
+      return;
+    }
+    if(!cur){
+      out.cardErrors.push('line '+ln+': "'+key+'" before any "name:" — open an entry with "name:" first');
+      return;
+    }
+    const fam=INTAKE_FAMILIES[out.family];
+    if(!fam) return;                       /* the card family was bad — already flagged */
+    if(!fam.fields.includes(key)){
+      cur.errors.push('line '+ln+': a '+fam.label+' has no field "'+key+'"');
+      return;
+    }
+    const parts=()=> val.split(',').map(s=>s.trim()).filter(Boolean);
+    const addVars=(into)=> parts().forEach(tok=>{
+      const id=Number(tok);
+      if(!Number.isInteger(id) || !P1_BY_ID[id])
+        cur.errors.push('line '+ln+': "'+tok+'" is not an Index variable');
+      else if(!into.includes(id)) into.push(id);
+    });
+    if(key==='inputs')        addVars(cur.inputs);
+    else if(key==='vars')     addVars(cur.vars);
+    else if(key==='clusters') parts().forEach(tok=>{
+      const id=Number(tok);
+      if(!Number.isInteger(id) || !DB.clusters.some(c=>c.id===id))
+        cur.errors.push('line '+ln+': cluster "'+tok+'" does not exist');
+      else if(!cur.clusters.includes(id)) cur.clusters.push(id);
+    });
+    else if(key==='outputs')  parts().forEach(nm=>{
+      const ok=OUTPUT_KINDS.find(o=>o.name.toLowerCase()===nm.toLowerCase());
+      if(!ok) cur.errors.push('line '+ln+': "'+nm+'" is not an output kind');
+      else if(!cur.output_kinds.includes(ok.id)) cur.output_kinds.push(ok.id);
+    });
+    else if(key==='status'){
+      const s=val.toLowerCase();
+      if(s==='active') cur.status='Active';
+      else if(s==='inactive') cur.status='Inactive';
+      else cur.errors.push('line '+ln+': status must be Active or Inactive');
+    }
+    else if(key==='section') cur.section=val;
+    else if(key==='text')    cur.text=val;
+  });
+  return out;
+}
+
+/* a formula's full variable set: its direct inputs, plus every variable
+   in every cluster it cites (clusters are just a typing shortcut). */
+function intakeEffectiveInputs(it){
+  const set=new Set(it.inputs);
+  it.clusters.forEach(cid=>{
+    const c=DB.clusters.find(x=>x.id===cid);
+    if(c) c.variables.forEach(v=>set.add(v));
+  });
+  return [...set];
+}
+
+/* a one-line summary of what a clean entry would create */
+function intakeSummary(it, family){
+  if(family==='1'){
+    let s=it.inputs.length+' input'+(it.inputs.length===1?'':'s');
+    if(it.clusters.length)
+      s+=' + '+it.clusters.length+' cluster'+(it.clusters.length===1?'':'s')+
+         ' → '+intakeEffectiveInputs(it).length+' variables';
+    s+=', '+it.output_kinds.length+' output kind'+(it.output_kinds.length===1?'':'s');
+    if(it.status==='Inactive') s+=' · inactive';
+    return s;
+  }
+  return it.vars.length+' variable'+(it.vars.length===1?'':'s');
+}
+
+/* draw the preview from the current parse — no re-parse, so a created
+   entry stays marked created and cannot be made twice. */
+function drawIntakePreview(){
+  const box=document.getElementById('intake-preview');
+  const createBtn=document.getElementById('intake-create-btn');
+  const p=intakeParse;
+  if(p.cardCode===null && !p.items.length && !p.cardErrors.length){
+    box.innerHTML='<div class="ip-hint">Nothing to preview — paste a card above first.</div>';
+    createBtn.disabled=true; return;
+  }
+  let html='';
+  if(p.cardErrors.length){
+    html+='<div class="ip-carderr">';
+    p.cardErrors.forEach(e=> html+='<div class="ip-err">'+escHtml(e)+'</div>');
+    html+='</div>';
+  }
+  const fam = p.family && INTAKE_FAMILIES[p.family] ? INTAKE_FAMILIES[p.family].label : '?';
+  let pending=0, blocked=0, done=0, rows='';
+  p.items.forEach((it,idx)=>{
+    const hasErr=it.errors.length>0;
+    const stop=hasErr || p.cardErrors.length>0;
+    if(it._created) done++; else if(stop) blocked++; else pending++;
+    const code=(p.cardCode||'?')+'.'+(idx+1);
+    rows+='<label class="ip-item'+(hasErr?' bad':'')+(it._created?' done':'')+'">';
+    rows+= it._created ? '<span class="ip-check">✓</span>'
+         : stop        ? '<input type="checkbox" disabled>'
+         :               '<input type="checkbox" data-ii="'+idx+'" checked>';
+    rows+='<span class="ip-code">'+escHtml(code)+'</span>';
+    rows+='<span class="ip-main"><span class="ip-name">'+
+          escHtml(it.name||'(unnamed)')+'</span>';
+    if(it._created)  rows+='<span class="ip-detail">created ✓</span>';
+    else if(!hasErr) rows+='<span class="ip-detail">'+escHtml(intakeSummary(it,p.family))+'</span>';
+    it.errors.forEach(e=> rows+='<span class="ip-err">'+escHtml(e)+'</span>');
+    rows+='</span></label>';
+  });
+  box.innerHTML=html+
+    '<div class="ip-summary">card '+escHtml(p.cardCode||'—')+' · '+fam+' · '+
+    pending+' ready'+(done?' · '+done+' created':'')+
+    (blocked?' · '+blocked+' blocked':'')+'</div>'+rows;
+  createBtn.disabled = pending===0;
+}
+
+/* Preview button — parse the textarea fresh, then draw */
+function previewIntake(){
+  intakeParse = parseIntake(document.getElementById('intake-ta').value);
+  drawIntakePreview();
+}
+
+/* Create button — POST every ticked entry with its traceability code,
+   mark it created, refresh the page. */
+async function runIntakeCreate(){
+  const p=intakeParse;
+  const ticked=[...document.querySelectorAll('#intake-preview input[data-ii]:checked')]
+    .map(c=>p.items[Number(c.dataset.ii)]);
+  if(!ticked.length){ toast('Tick at least one entry to create'); return; }
+  document.getElementById('intake-create-btn').disabled=true;
+  let made=0; const failed=[];
+  for(const it of ticked){
+    const code=p.cardCode+'.'+(p.items.indexOf(it)+1);
+    try{
+      if(p.family==='1')
+        DB.lenses.push(await apiCreateLens({
+          name:it.name, status:it.status, section:it.section,
+          inputs:intakeEffectiveInputs(it), lens:it.text,
+          output_kinds:it.output_kinds, intake_code:code}));
+      else
+        DB.clusters.push(await apiCreateCluster(it.name, it.vars, code));
+      it._created=true; made++;
+    }catch(e){ failed.push(it.name+' — '+e.message); }
+  }
+  render();                       /* the new lenses / clusters now show on the page */
+  drawIntakePreview();            /* created rows lock; any failure stays actionable */
+  toast(failed.length
+    ? 'Created '+made+' · '+failed.length+' failed — '+failed[0]
+    : 'Intake done — created '+made+' item'+(made===1?'':'s'));
+}
+
+const intakeOverlay=document.getElementById('intake-overlay');
+function openIntake(){
+  intakeParse={ cardCode:null, family:null, items:[], cardErrors:[] };
+  document.getElementById('intake-preview').innerHTML=INTAKE_HINT;
+  document.getElementById('intake-create-btn').disabled=true;
+  intakeOverlay.classList.add('open');
+}
+function closeIntake(){ intakeOverlay.classList.remove('open'); }
+document.getElementById('intake-btn').addEventListener('click',openIntake);
+document.getElementById('intake-x').addEventListener('click',closeIntake);
+document.getElementById('intake-close-btn').addEventListener('click',closeIntake);
+document.getElementById('intake-preview-btn').addEventListener('click',previewIntake);
+document.getElementById('intake-create-btn').addEventListener('click',runIntakeCreate);
+intakeOverlay.addEventListener('click',e=>{ if(e.target===intakeOverlay) closeIntake(); });
+
+/* ============================================================
+   6 · MISC — reset, status, toast, helpers, boot
+   ============================================================ */
+document.getElementById('reset-btn').addEventListener('click',()=>{
+  ui.section='Company Facts'; ui.subsection='Disclosure'; ui.activeVar=1;
+  ui.activeLens=null; ui.refLens=null;
+  /* reset is a safe re-sync: pull the lens AND cluster lists fresh
+     from the database and reset the view. It deletes nothing. */
+  Promise.all([
+    fetch('/api/lenses').then(r=>r.json()),
+    fetch('/api/clusters').then(r=>r.json())
+  ]).then(([lenses, clusters])=>{
+    DB.lenses=lenses; DB.clusters=clusters; render();
+    toast('View reset — reloaded from the database');
+  }).catch(e=>toast('⚠ '+e.message));
+});
+document.getElementById('callout-x').addEventListener('click',
+  ()=>document.getElementById('callout').style.display='none');
+
+function updateStatus(){
+  const active=DB.lenses.filter(l=>l.status==='Active').length;
+  document.getElementById('status-bar').innerHTML=
+    `<span><b>${P1_VARIABLES.length}</b> Index variables</span>`+
+    `<span><b>${DB.lenses.length}</b> lenses (<b>${active}</b> active)</span>`+
+    `<span><b>${DB.clusters.length}</b> clusters</span>`+
+    `<span>section: <b>${escHtml(ui.section)}</b></span>`+
+    `<span class="right">v2 machine · page 2 is a catalog</span>`;
+}
+
+let toastTimer=null;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),1900);
+}
+function escHtml(s){ return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---- boot — fetch the reference data, lenses, and clusters from
+   synthesis.db over the API, then render. The page now REQUIRES the
+   server (python server.py); opening the file directly shows the
+   message below. ---- */
+async function boot(){
+  try{
+    const [vars, oks, lenses, clusters] = await Promise.all([
+      fetch('/api/variables').then(r=>r.json()),
+      fetch('/api/output-kinds').then(r=>r.json()),
+      fetch('/api/lenses').then(r=>r.json()),
+      fetch('/api/clusters').then(r=>r.json())
+    ]);
+    P1_VARIABLES = vars;
+    P1_BY_ID = {}; P1_VARIABLES.forEach(v=>P1_BY_ID[v.id]=v);
+    P1_GROUPS = buildP1Groups(P1_VARIABLES);
+    OUTPUT_KINDS = oks;
+    OK_BY_ID = {}; OUTPUT_KINDS.forEach(k=>OK_BY_ID[k.id]=k);
+    DB.lenses = lenses;       /* both the lenses and the clusters are */
+    DB.clusters = clusters;   /* authoritative from the database */
+    render();
+  }catch(err){
+    content.innerHTML =
+      '<div class="builder-empty">Could not reach the database.<br><br>'+
+      'This workbench now runs on the live <code>synthesis.db</code>, so it '+
+      'needs the server running. In the <code>Frontend</code> folder run '+
+      '<code>python server.py</code>, then open '+
+      '<code>http://127.0.0.1:5000</code>.<br><br>('+escHtml(String(err))+')</div>';
+  }
+}
+boot();
+</script>
+</body>
+</html>

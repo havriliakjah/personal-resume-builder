@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Synthesis Workbench</title>
+<style>
+  :root{
+    --indigo:#33356b; --indigo-deep:#25264a; --paper:#f4f3ee;
+    --card:#fbfaf6; --ink:#2d2e3a; --muted:#6a6a73; --faint:#9b9aa3;
+    --coral:#ff6d5a; --line:#e7e5df;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{min-height:100%;}
+  body{background:var(--indigo-deep); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:2.4rem 1.4rem;}
+
+  .hero{display:flex; flex-direction:column; align-items:center;
+    text-align:center; margin-bottom:2.1rem;}
+  .mark{width:64px; height:64px; margin-bottom:1rem;}
+  .title{color:#fff; font-size:1.95rem; font-weight:800; letter-spacing:-.025em;}
+  .tagline{color:#9c9bc0; font-size:.92rem; margin-top:.4rem;}
+
+  .ports{display:flex; gap:1.1rem; flex-wrap:wrap;
+    justify-content:center; width:100%; max-width:780px;}
+  .port{flex:1 1 300px; max-width:380px; background:var(--card);
+    border:1.5px solid transparent; border-radius:15px;
+    padding:1.55rem 1.55rem 1.3rem; text-decoration:none; color:inherit;
+    display:flex; flex-direction:column;
+    box-shadow:0 8px 26px rgba(0,0,0,.30);
+    transition:transform .13s ease, box-shadow .13s ease, border-color .13s ease;}
+  .port:hover{transform:translateY(-5px); border-color:var(--coral);
+    box-shadow:0 18px 40px rgba(0,0,0,.40);}
+  .port:active{transform:translateY(-1px);}
+  .port-ico{width:46px; height:46px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center; margin-bottom:.9rem;}
+  .port-ico.profile{background:#e6f4ea; color:#1e7a47;}
+  .port-ico.formulas{background:#f1eafb; color:#5e3a8e;}
+  .port h2{font-size:1.18rem; font-weight:800; letter-spacing:-.01em;}
+  .port .desc{font-size:.83rem; color:var(--muted); line-height:1.6;
+    margin-top:.45rem; flex:1;}
+  .port .foot{display:flex; align-items:center; justify-content:space-between;
+    margin-top:1rem; padding-top:.72rem; border-top:1px solid var(--line);}
+  .port .stat{font-size:.74rem; font-weight:700; color:var(--faint);}
+  .port .enter{font-size:.78rem; font-weight:800; color:var(--coral);}
+
+  footer{color:#62638c; font-size:.72rem; margin-top:2.5rem; text-align:center;}
+</style>
+</head>
+<body>
+
+  <div class="hero">
+    <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+      <rect x="5" y="5" width="90" height="90" rx="21" fill="#33356b"/>
+      <circle cx="50" cy="50" r="31" fill="#ffffff"/>
+      <circle cx="50" cy="50" r="18" fill="#33356b"/>
+    </svg>
+    <div class="title">Synthesis Workbench</div>
+    <div class="tagline">Choose where to work.</div>
+  </div>
+
+  <div class="ports">
+
+    <a class="port" href="/profile">
+      <div class="port-ico profile">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="3.5" y="6.5" width="12" height="14.5" rx="1.6"/>
+          <rect x="8.5" y="3" width="12" height="14.5" rx="1.6" fill="#e6f4ea"/>
+        </svg>
+      </div>
+      <h2>Personal Profile</h2>
+      <div class="desc">The companies you've worked at. Each job is recorded
+        across three sheets — Company Facts, Personal Info, and Story.</div>
+      <div class="foot">
+        <span class="stat" id="profile-stat">Work experience</span>
+        <span class="enter">Enter &rarr;</span>
+      </div>
+    </a>
+
+    <a class="port" href="/formulas">
+      <div class="port-ico formulas">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.2"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </div>
+      <h2>Formulas</h2>
+      <div class="desc">The lens warehouse — build, catalog, and intake the
+        formulas that read the 88-variable Index.</div>
+      <div class="foot">
+        <span class="stat" id="formulas-stat">The lens warehouse</span>
+        <span class="enter">Enter &rarr;</span>
+      </div>
+    </a>
+
+  </div>
+
+  <footer>Synthesis Workbench &nbsp;·&nbsp; v2 machine &nbsp;·&nbsp; runs on synthesis.db</footer>
+
+<script>
+  /* A small live touch -- show how full the warehouse is. The fetch is
+     best-effort: if it fails, each port keeps its plain label and the
+     start screen still works. */
+  Promise.all([
+    fetch('/api/lenses').then(function(r){ return r.json(); }),
+    fetch('/api/clusters').then(function(r){ return r.json(); })
+  ]).then(function(res){
+    var L = res[0].length, C = res[1].length;
+    document.getElementById('formulas-stat').textContent =
+      L + ' lens' + (L === 1 ? '' : 'es') + '  ·  ' +
+      C + ' cluster' + (C === 1 ? '' : 's');
+  }).catch(function(){});
+</script>
+</body>
+</html>

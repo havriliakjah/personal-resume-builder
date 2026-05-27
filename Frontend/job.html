@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add a Company — Synthesis Workbench</title>
+<style>
+  :root{
+    --bg:#f4f3ee; --card:#ffffff; --card-2:#faf9f6; --border:#e7e5df; --border-2:#ebe9e1;
+    --ink:#2d2e3a; --muted:#6a6a73; --subtle:#8a8a93; --faint:#b5b5bd;
+    --coral:#ff6d5a; --coral-hover:#f5604a; --coral-bg:#fff5f3;
+    --cf:#3b72d9; --cf-bg:#e8f0fe; --pi:#1eb073; --pi-bg:#e6f4ea;
+    --st:#8b5cc7; --st-bg:#f1eafb;
+    --tv:#d97a1e; --tv-bg:#fdeed8;     /* By Tier — the cross-cutting view */
+    --shadow:0 1px 3px rgba(0,0,0,.05);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    line-height:1.5; padding:1.1rem;}
+
+  .bar{background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:.8rem 1.1rem; display:flex; align-items:center; gap:.6rem;
+    box-shadow:var(--shadow);}
+  .back{font-size:.78rem; font-weight:600; text-decoration:none; color:var(--muted);
+    border:1px solid var(--border); background:var(--card-2);
+    padding:.42rem .7rem; border-radius:8px; flex:none; margin-right:.4rem;}
+  .back:hover{border-color:var(--coral); color:var(--coral);}
+  .bar h1{font-size:1.05rem; font-weight:800;}
+  .bar .sub{font-size:.77rem; color:var(--muted);}
+  .editbtn{margin-left:auto; flex:none; font:inherit; font-size:.8rem;
+    font-weight:700; cursor:pointer; border:1px solid var(--border);
+    background:var(--card-2); color:var(--muted);
+    padding:.5rem .85rem; border-radius:9px;}
+  .editbtn:hover{border-color:var(--coral); color:var(--coral);}
+  .save{flex:none; font:inherit; font-size:.8rem; font-weight:700;
+    cursor:pointer; border:1px solid var(--coral); background:var(--coral);
+    color:#fff; padding:.5rem .95rem; border-radius:9px;}
+  .save:hover{background:var(--coral-hover);}
+
+  .namebox{background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:.95rem 1.1rem; margin-top:.7rem; box-shadow:var(--shadow);}
+  .namebox label{font-size:.64rem; font-weight:800; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--subtle);}
+  .namebox input{display:block; width:100%; margin-top:.35rem; font:inherit;
+    font-size:1.15rem; font-weight:700; color:var(--ink);
+    border:none; border-bottom:2px solid var(--border); background:none;
+    padding:.25rem .1rem;}
+  .namebox input:focus{outline:none; border-bottom-color:var(--coral);}
+
+  /* the intake — a cross-sheet section that sits above the three tabs */
+  .feature-slot{background:var(--coral-bg); border:1px solid #f1c4bb;
+    border-radius:14px; padding:1rem 1.1rem; margin-top:.7rem;}
+  .fs-row{display:flex; align-items:center; gap:1rem;}
+  .fs-label{font-size:.64rem; font-weight:800; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--coral);}
+  .fs-body{margin-top:.2rem; font-size:.82rem; color:var(--muted); line-height:1.5;}
+  .fs-btn{margin-left:auto; flex:none; font:inherit; font-size:.8rem;
+    font-weight:700; cursor:pointer; border:1px solid var(--coral);
+    background:var(--coral); color:#fff; padding:.5rem .9rem; border-radius:9px;}
+  .fs-btn:hover{background:var(--coral-hover);}
+
+  .tabs{display:flex; gap:.4rem; margin-top:.7rem;}
+  /* the tab strip is empty now (Stories moved into the tier picker)
+     and CF/PI tabs are gone — hide the row entirely so it doesn't take
+     padding/margin. The DOM node stays for renderTabs() to write into,
+     harmlessly. */
+  .tabs:empty{display:none;}
+  .tab{flex:1; font:inherit; cursor:pointer; border:1px solid var(--border);
+    background:var(--card); color:var(--muted); padding:.55rem .7rem;
+    border-radius:11px; text-align:center; display:flex; flex-direction:column;
+    gap:.12rem; transition:background .12s;}
+  .tab .tname{font-size:.85rem; font-weight:800; letter-spacing:-.01em;}
+  .tab .tn{font-size:.64rem; font-weight:700; color:var(--faint);}
+  .tab:hover{background:var(--card-2);}
+  .tab.active{color:#fff;}
+  .tab.active.cf{background:var(--cf); border-color:var(--cf);}
+  .tab.active.pi{background:var(--pi); border-color:var(--pi);}
+  .tab.active.st{background:var(--st); border-color:var(--st);}
+  .tab.active.tv{background:var(--tv); border-color:var(--tv);}
+  .tab.active .tn{color:rgba(255,255,255,.82);}
+
+  .sheet{background:var(--card); border:1px solid var(--border);
+    border-radius:14px; box-shadow:var(--shadow); margin-top:.7rem;
+    padding:1rem 1.1rem 1.3rem;}
+  .sheet-head{font-size:.73rem; color:var(--subtle);}
+
+  .picker-label{display:block; font-size:.64rem; font-weight:800;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--subtle);
+    margin-top:.85rem;}
+  .section-picker{display:block; width:100%; margin-top:.32rem; font:inherit;
+    font-size:.92rem; font-weight:700; color:var(--ink); cursor:pointer;
+    border:1px solid var(--border); border-radius:9px;
+    background:var(--card-2); padding:.55rem .6rem;}
+  .section-picker:focus{outline:2px solid var(--coral-bg); border-color:var(--coral);}
+
+  .section-body{margin-top:.95rem;}
+  .section-count{font-size:.72rem; color:var(--subtle); margin-bottom:.6rem;}
+  /* .section-title — the bolded, prominent name of the linked-stack
+     (e.g. "Roles", "References", "Certifications"). Steps up to the
+     section heading the user actually thinks in, in contrast to the
+     small grey metadata that follows. */
+  .section-title{font-size:.95rem; font-weight:800; letter-spacing:-.01em;
+    color:var(--ink);}
+  /* .flat-note — italic aside inside .section-count headers, used to
+     add a short hint to the user ("Add a person, a chapter…") without
+     it competing with the section name for attention. */
+  .section-count .flat-note{font-style:italic; color:var(--faint);}
+  /* .file-group / .file-header — inline file dividers in the By Tier
+     view. These replace the old Company Facts and Personal Info tabs by
+     expressing the same grouping right inside the tier. The header sits
+     on a thin top border so it reads as a section break without needing
+     a full box around the group. */
+  .file-group{margin-top:1rem;}
+  .file-group:first-child{margin-top:0;}
+  .file-header{font-size:.78rem; font-weight:800; color:var(--ink);
+    letter-spacing:-.005em; padding:.55rem 0 .45rem;
+    border-top:1px solid var(--border-2); margin-bottom:.35rem;}
+  .file-group:first-child .file-header{border-top:none; padding-top:.1rem;}
+  .file-header .file-count{font-weight:600; color:var(--faint);
+    font-size:.7rem; letter-spacing:0;}
+
+  /* .linked-stack — the wrapper around a repeating section's entry-stack
+     in the By Tier view. The warm amber background + left accent stripe
+     read as one structural unit: "these entries are linked, they
+     belong together across rows." Singular cards below stay neutral so
+     the eye can tell the structurally-heavier groups from the flat list
+     at a glance. The user's ask: roles on top, different color shows
+     they're linked, "colors can solve rather than code." */
+  .linked-stack{position:relative; margin:.6rem 0 .85rem;
+    background:linear-gradient(to bottom, #fff7e6, #fffaf0);
+    border:1px solid #ecd9a9; border-left:4px solid #d99a3e;
+    border-radius:10px; padding:.65rem .8rem .75rem;}
+  .linked-stack .section-count{color:#7a5418; font-weight:700;
+    margin-bottom:.45rem;}
+  .linked-stack .entry-card{background:#fffdf7; border-color:#e5d4a4;}
+  .linked-stack .entry-add{border-color:#c98a2a; color:#7a4d10;
+    background:#fff1d6;}
+  .linked-stack .entry-add:hover{background:#ffe6b8;}
+
+  /* .story-stack — variant of .linked-stack for the Story track.  Same
+     "this is a linked structural unit" semantics, but in violet so the
+     user reads it as the NARRATIVE track, not a tier. Color ties to the
+     existing --st (the legacy Story sheet color), so the visual
+     vocabulary stays consistent across the app. */
+  .linked-stack.story-stack{
+    background:linear-gradient(to bottom, #f5edfb, #faf5fd);
+    border-color:#d8c4ed; border-left-color:var(--st);}
+  .linked-stack.story-stack .section-count{color:#5d3e8a;}
+  .linked-stack.story-stack .entry-card{background:#fbf8fe;
+    border-color:#d8c4ed;}
+  .linked-stack.story-stack .entry-add{border-color:var(--st);
+    color:#4a2d72; background:#ede0fa;}
+  .linked-stack.story-stack .entry-add:hover{background:#dec8f5;}
+
+  /* Home-coordinated linked-stack colors — each repeating section picks
+     up the color of its HOME file (CF / PI / Story), regardless of
+     which tier the user is currently viewing. The P1 Roles stack is
+     the SAME stack whether seen from T2 or T3 — its color says so.
+     Structural identity expressed in color rather than in repeated
+     code lookups. */
+
+  /* Company Facts sections — blue (--cf): C3 Certifications, C3 Industry Memberships */
+  .linked-stack.from-cf{
+    background:linear-gradient(to bottom, #e6eefd, #eff4fe);
+    border-color:#b8cbf0; border-left-color:var(--cf);}
+  .linked-stack.from-cf .section-count{color:#1f3d80;}
+  .linked-stack.from-cf .entry-card{background:#f5f8ff; border-color:#b8cbf0;}
+  .linked-stack.from-cf .entry-add{border-color:var(--cf); color:#1f3d80;
+    background:#d6e2f8;}
+  .linked-stack.from-cf .entry-add:hover{background:#c2d3f4;}
+
+  /* Personal Info sections — teal/green (--pi): P1 Roles, P2 References */
+  .linked-stack.from-pi{
+    background:linear-gradient(to bottom, #e3f3eb, #f0f9f4);
+    border-color:#b5d9c5; border-left-color:var(--pi);}
+  .linked-stack.from-pi .section-count{color:#1a5e3f;}
+  .linked-stack.from-pi .entry-card{background:#f4faf6; border-color:#b5d9c5;}
+  .linked-stack.from-pi .entry-add{border-color:var(--pi); color:#1a5e3f;
+    background:#d0ecdb;}
+  .linked-stack.from-pi .entry-add:hover{background:#bce0c8;}
+
+  /* ─────────── PER-SECTION PALETTE ───────────
+     Each unique section gets its own distinct color, while staying in
+     the family palette of its home file.  Roles ≠ References (both PI),
+     Certifications ≠ Industry Memberships (both CF), and the three Story
+     sections each get their own violet shade. The eye can tell them
+     apart at a glance — and the SAME section keeps the SAME color
+     across every tier view (data-home-section is identity, not filter). */
+
+  /* P2 References — warm amber-gold, "people who vouch for you" feel.
+     Visually distinct from Roles (the work-history teal) while still
+     reading as PI by neighborhood. */
+  .linked-stack[data-home-section="P2 References"]{
+    background:linear-gradient(to bottom, #fff3dc, #fff9eb);
+    border-color:#ead5a0; border-left-color:#c98a2a;}
+  .linked-stack[data-home-section="P2 References"] .section-count{color:#7a5418;}
+  .linked-stack[data-home-section="P2 References"] .entry-card{
+    background:#fffcf2; border-color:#ead5a0;}
+  .linked-stack[data-home-section="P2 References"] .entry-add{
+    border-color:#c98a2a; color:#7a4d10; background:#fbe9c5;}
+  .linked-stack[data-home-section="P2 References"] .entry-add:hover{
+    background:#f5dba0;}
+
+  /* C3 Industry Memberships — slate/indigo, distinct from Certifications'
+     vivid blue. Both still read as CF by family. */
+  .linked-stack[data-home-section="C3 Industry Memberships"]{
+    background:linear-gradient(to bottom, #e5e7f4, #eef0f8);
+    border-color:#b9bfde; border-left-color:#5252a0;}
+  .linked-stack[data-home-section="C3 Industry Memberships"] .section-count{
+    color:#2d2d6e;}
+  .linked-stack[data-home-section="C3 Industry Memberships"] .entry-card{
+    background:#f5f6fb; border-color:#b9bfde;}
+  .linked-stack[data-home-section="C3 Industry Memberships"] .entry-add{
+    border-color:#5252a0; color:#2d2d6e; background:#d8dbf0;}
+  .linked-stack[data-home-section="C3 Industry Memberships"] .entry-add:hover{
+    background:#c4c9e8;}
+
+  /* Story sub-sections — three shades inside the violet family.
+     People  → core violet (--st)                — "who"
+     Arc     → indigo / blue-violet              — "when / what happened"
+     Model   → magenta / pink-violet             — "how I work"     */
+  .linked-stack.story-stack[data-home-section="S2 Arc"]{
+    background:linear-gradient(to bottom, #e8e7fb, #f1f0fd);
+    border-color:#bcbbed; border-left-color:#5b54c7;}
+  .linked-stack.story-stack[data-home-section="S2 Arc"] .section-count{
+    color:#332d8a;}
+  .linked-stack.story-stack[data-home-section="S2 Arc"] .entry-card{
+    background:#f6f5fd; border-color:#bcbbed;}
+  .linked-stack.story-stack[data-home-section="S2 Arc"] .entry-add{
+    border-color:#5b54c7; color:#332d8a; background:#dcd9f7;}
+  .linked-stack.story-stack[data-home-section="S2 Arc"] .entry-add:hover{
+    background:#c8c4f0;}
+
+  .linked-stack.story-stack[data-home-section="S3 Operating Model"]{
+    background:linear-gradient(to bottom, #fce8f5, #fdf1f9);
+    border-color:#e8b8d8; border-left-color:#b03e8a;}
+  .linked-stack.story-stack[data-home-section="S3 Operating Model"] .section-count{
+    color:#6d2058;}
+  .linked-stack.story-stack[data-home-section="S3 Operating Model"] .entry-card{
+    background:#fdf6fa; border-color:#e8b8d8;}
+  .linked-stack.story-stack[data-home-section="S3 Operating Model"] .entry-add{
+    border-color:#b03e8a; color:#6d2058; background:#f6d6e7;}
+  .linked-stack.story-stack[data-home-section="S3 Operating Model"] .entry-add:hover{
+    background:#efbcd9;}
+  .fields{display:grid; grid-template-columns:1fr 1fr; gap:.6rem;}
+  @media (max-width:640px){ .fields{grid-template-columns:1fr;} }
+
+  .field{border:1px solid var(--border-2); border-radius:10px;
+    background:var(--card-2); padding:.6rem .7rem;}
+  .field label{display:flex; align-items:center; gap:.36rem; font-size:.79rem;
+    font-weight:700; color:var(--ink);}
+  .field .num{font-size:.62rem; font-weight:800; font-variant-numeric:tabular-nums;
+    background:var(--bg); border:1px solid var(--border-2); color:var(--subtle);
+    border-radius:5px; padding:.04rem .3rem; flex:none;}
+  .field .rep{font-size:.55rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--subtle); background:var(--bg);
+    border:1px solid var(--border-2); border-radius:4px; padding:.05rem .3rem;}
+  .field .typ{font-size:.55rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--coral); background:var(--coral-bg);
+    border:1px solid #ffd9d2; border-radius:4px; padding:.05rem .3rem;}
+
+  /* tier pill — a small T1 / T2 / T3 tag beside the field label. Tier 1 is
+     the super-tight set (the ~7 vars almost every formula needs); Tier 2 is
+     the large effort-worthy substrate; Tier 3 is varying / optional. The
+     color ramp tracks priority: T1 reads as a strong cue, T2 a quieter
+     teal, T3 a neutral grey. Tooltip ('Tier N — …') spells out the meaning
+     on hover. */
+  .field .tier-pill{font-size:.55rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.04em; border:1px solid; border-radius:4px;
+    padding:.05rem .3rem;}
+  .field .tier-1{color:#a13a1e; background:#ffe6dd; border-color:#ffc4b1;}
+  .field .tier-2{color:#21684e; background:#dcf2e8; border-color:#b5dec9;}
+  .field .tier-3{color:#5e6068; background:#ececef; border-color:#d9d8de;}
+
+  /* derived-pill — read-only badge that replaces the input on variables
+     whose value the server computes (count of entries, duration between
+     dates, etc.). The "auto" tag on the left disambiguates from a normal
+     filled input; the value text on the right reads live from the JS
+     mirror of the server's recipes. Tooltip explains the recipe. */
+  .field .derived-pill{margin-top:.4rem; display:inline-flex; align-items:center;
+    gap:.4rem; padding:.36rem .55rem; border:1px solid #d8dde8;
+    border-radius:7px; background:#f3f5fa; font-size:.8rem;}
+  .field .derived-pill .derived-tag{font-size:.55rem; font-weight:800;
+    letter-spacing:.05em; text-transform:uppercase; color:#5170b8;
+    background:#e3eaf7; border:1px solid #c8d4ee; border-radius:4px;
+    padding:.06rem .32rem;}
+  .field .derived-pill .derived-val{font-weight:700; color:var(--ink);
+    font-variant-numeric:tabular-nums;}
+  .field input,.field select{width:100%; margin-top:.4rem; font:inherit;
+    font-size:.8rem; color:var(--ink); border:1px solid var(--border);
+    border-radius:7px; background:var(--card); padding:.36rem .45rem;}
+  .field input:focus,.field select:focus{outline:2px solid var(--coral-bg);
+    border-color:var(--coral);}
+  .field select{cursor:pointer;}
+  .field .hint{font-size:.68rem; color:var(--subtle); margin-top:.34rem; line-height:1.45;}
+
+  .status{margin-top:.75rem; font-size:.72rem; color:var(--faint); text-align:center;}
+
+  .toast{position:fixed; bottom:1.3rem; left:50%; transform:translateX(-50%);
+    background:#2d2e3a; color:#fff; font-size:.8rem; font-weight:600;
+    padding:.55rem .95rem; border-radius:9px; box-shadow:0 8px 24px rgba(0,0,0,.25);
+    opacity:0; transition:opacity .2s,transform .2s; pointer-events:none; z-index:80;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+
+  /* the intake modal */
+  .modal-bg{position:fixed; inset:0; background:rgba(45,46,58,.55);
+    display:none; align-items:flex-start; justify-content:center;
+    padding:2.4rem 1.1rem; overflow-y:auto; z-index:60;}
+  .modal-bg.show{display:flex;}
+  .modal{background:var(--card); border-radius:14px; width:100%;
+    max-width:680px; box-shadow:0 18px 50px rgba(0,0,0,.35);}
+  .modal-head{display:flex; align-items:center; gap:1rem;
+    padding:.9rem 1.1rem; border-bottom:1px solid var(--border);}
+  .modal-head h2{font-size:.98rem; font-weight:800;}
+  .modal-head .mh-sub{font-size:.73rem; color:var(--muted); margin-top:.1rem;}
+  .modal-x{margin-left:auto; flex:none; cursor:pointer; font:inherit;
+    font-size:.9rem; font-weight:700; color:var(--muted);
+    border:1px solid var(--border); background:var(--card-2);
+    border-radius:8px; padding:.25rem .55rem;}
+  .modal-x:hover{border-color:var(--coral); color:var(--coral);}
+  .modal-body{padding:1.1rem;}
+  .intake-text{width:100%; height:190px; font-family:ui-monospace,
+    "Cascadia Code",Consolas,"Courier New",monospace; font-size:.8rem;
+    color:var(--ink); border:1px solid var(--border); border-radius:9px;
+    background:var(--card-2); padding:.6rem .7rem; resize:vertical; line-height:1.55;}
+  .intake-text:focus{outline:2px solid var(--coral-bg); border-color:var(--coral);}
+  .modal-actions{display:flex; gap:.5rem; margin-top:.7rem;}
+  .btn-primary{font:inherit; font-size:.8rem; font-weight:700; cursor:pointer;
+    border:1px solid var(--coral); background:var(--coral); color:#fff;
+    padding:.5rem .95rem; border-radius:9px;}
+  .btn-primary:hover{background:var(--coral-hover);}
+  .btn-primary:disabled{opacity:.4; cursor:not-allowed;}
+  .btn-ghost{font:inherit; font-size:.8rem; font-weight:700; cursor:pointer;
+    border:1px solid var(--border); background:var(--card-2); color:var(--muted);
+    padding:.5rem .95rem; border-radius:9px;}
+  .btn-ghost:hover{border-color:var(--coral); color:var(--coral);}
+
+  /* the preview — a fill-map */
+  .pv{margin-top:.95rem;}
+  .pv-empty{font-size:.78rem; color:var(--faint); text-align:center;
+    padding:1.1rem; border:1.5px dashed var(--border); border-radius:10px;}
+  .pv-card{border:1px solid var(--border); border-radius:11px;
+    margin-bottom:.6rem; overflow:hidden;}
+  .pv-head{display:flex; align-items:center; gap:.45rem;
+    padding:.5rem .75rem; font-size:.76rem; font-weight:800;}
+  .pv-card.add .pv-head{background:var(--pi-bg); color:#1e7a47;}
+  .pv-card.subtract .pv-head{background:#fdecea; color:#c0392b;}
+  .pv-card.bad .pv-head{background:#fbeaea; color:#a83232;}
+  .pv-tag{font-size:.58rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.05em; border-radius:5px; padding:.1rem .42rem;
+    background:rgba(255,255,255,.65);}
+  .pv-rows{padding:.45rem .75rem .55rem;}
+  .pv-row{display:flex; gap:.5rem; font-size:.76rem; padding:.15rem 0;
+    align-items:baseline;}
+  .pv-id{font-weight:800; font-variant-numeric:tabular-nums;
+    color:var(--subtle); flex:none;}
+  .pv-field{font-weight:700; color:var(--ink); flex:none;}
+  .pv-val{color:var(--muted);}
+  .pv-row.err .pv-val{color:#b03030;}
+  .pv-err{font-size:.74rem; color:#b03030; padding:.15rem 0;}
+  .pv-note{font-size:.71rem; color:var(--faint); padding:0 .75rem .5rem;}
+
+  /* locked state — a job loaded from the database opens read-only,
+     every control disabled, until the Edit button is pressed */
+  .save:disabled{opacity:.45; cursor:not-allowed;}
+  .save:disabled:hover{background:var(--coral);}
+  .editbtn:disabled{opacity:.45; cursor:not-allowed;}
+  .editbtn:disabled:hover{border-color:var(--border); color:var(--muted);}
+  .fs-btn:disabled{opacity:.45; cursor:not-allowed;}
+  .fs-btn:disabled:hover{background:var(--coral);}
+  .field input:disabled,.field select:disabled{background:var(--bg);
+    color:var(--muted); cursor:not-allowed;}
+  .namebox input:disabled{color:var(--ink);
+    -webkit-text-fill-color:var(--ink); opacity:1;
+    border-bottom-style:dotted; cursor:default;}
+
+  /* multi-entry — repeating sections render as a stack of entry-cards
+     (Role 1, Role 2, ...), each with a Remove control, plus a "+ Add"
+     button at the foot of the list.  One UI for every section marked
+     `repeats` — Roles, References, both Certification groups, and the
+     three Story sub-sections (People, Story Arc, Operating Model). */
+  .entries-list{margin-top:.55rem; display:flex; flex-direction:column;
+    gap:.55rem;}
+  .entry-card{border:1.5px solid var(--border); border-radius:11px;
+    background:var(--card); padding:.6rem .85rem .8rem;
+    box-shadow:0 1px 2px rgba(0,0,0,.03);}
+  .entry-head{display:flex; align-items:center; gap:.65rem;
+    margin-bottom:.55rem; padding-bottom:.45rem;
+    border-bottom:1px solid var(--border-2);}
+  .entry-name{font-size:.84rem; font-weight:800; color:var(--ink);
+    letter-spacing:-.01em;}
+  .entry-del{margin-left:auto; flex:none; font:inherit; font-size:.7rem;
+    font-weight:700; cursor:pointer;
+    border:1px solid var(--border); background:var(--card-2);
+    color:var(--muted); padding:.28rem .6rem; border-radius:7px;}
+  .entry-del:hover{border-color:#d9534f; color:#d9534f;}
+  .entry-del:disabled{opacity:.45; cursor:not-allowed;}
+  .entry-del:disabled:hover{border-color:var(--border); color:var(--muted);}
+  .entry-add{margin-top:.5rem; width:100%; font:inherit; font-size:.78rem;
+    font-weight:700; cursor:pointer;
+    border:1.5px dashed var(--coral); background:var(--coral-bg);
+    color:var(--coral); padding:.55rem 1rem; border-radius:10px;}
+  .entry-add:hover{background:#ffe9e4;}
+  .entry-add:disabled{opacity:.45; cursor:not-allowed;}
+  .entry-add:disabled:hover{background:var(--coral-bg);}
+
+  /* sentinels — reserved value strings ("N/A", future TBD/UNKNOWN/...)
+     that bypass type validation. A sentinel value renders as a pill in
+     place of the typed control; a typed field carries a small "Mark"
+     button below it to switch into sentinel mode. */
+  .sentinel-pill{display:flex; align-items:center; gap:.45rem;
+    margin-top:.4rem; padding:.38rem .55rem;
+    background:var(--bg); border:1.5px solid var(--border);
+    border-radius:7px; font-size:.78rem; font-weight:700;
+    color:var(--muted); letter-spacing:.04em; text-transform:uppercase;}
+  .sentinel-pill > span{flex:1;}
+  .sentinel-pill .sentinel-clear{flex:none; font:inherit; font-size:.7rem;
+    font-weight:700; cursor:pointer; line-height:1;
+    background:var(--card); border:1px solid var(--border-2);
+    border-radius:5px; padding:.18rem .42rem; color:var(--muted);}
+  .sentinel-pill .sentinel-clear:hover{border-color:#d9534f; color:#d9534f;}
+  .sentinel-pill .sentinel-clear:disabled{opacity:.45; cursor:not-allowed;}
+  .sentinel-pill .sentinel-clear:disabled:hover{border-color:var(--border-2);
+    color:var(--muted);}
+  .sentinel-mark{display:inline-block; margin-top:.36rem; font:inherit;
+    font-size:.62rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.07em; cursor:pointer;
+    background:none; border:none; padding:.16rem 0;
+    color:var(--subtle); text-align:left;}
+  .sentinel-mark:hover{color:var(--coral);}
+  .sentinel-mark:disabled{opacity:.45; cursor:not-allowed;}
+  .sentinel-mark:disabled:hover{color:var(--subtle);}
+
+  /* ────────── PROGRESS BLOCK ──────────
+     The dashboard that replaced the old single status badge.  Two rows:
+     tier progress (T1/T2/T3 segments, proportional to var counts) and
+     stories (engagement track). Each segment has its own colored fill
+     that grows left→right as assessed/total climbs. Live-updated by
+     refreshStatus() on every keystroke / +Add / Remove. */
+  .progress-block{background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:.85rem 1.1rem; margin-top:.8rem;
+    box-shadow:var(--shadow);}
+  .progress-row{margin-top:.95rem;}
+  .progress-row:first-child{margin-top:0;}
+  .progress-head{display:flex; align-items:baseline; justify-content:space-between;
+    gap:1rem; margin-bottom:.4rem;}
+  .progress-title{font-size:.72rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.07em; color:var(--muted);}
+  .progress-title .optional{font-weight:600; text-transform:none;
+    letter-spacing:0; color:var(--faint); font-size:.72rem;}
+  .progress-summary{font-size:.78rem; font-weight:700; color:var(--ink);
+    font-variant-numeric:tabular-nums;}
+  /* tier-keyed summary colors, mirror the field-card pills */
+  .progress-summary.tier-none{color:var(--muted);}
+  .progress-summary.tier-t1{color:#8a2e1a;}
+  .progress-summary.tier-t2{color:#1a5e3f;}
+  .progress-summary.tier-t3{color:#1f3d80;}
+  .progress-summary.stories-inactive{color:var(--faint); font-weight:600;}
+  .progress-summary.stories-active  {color:#5d3e8a;}
+  .progress-summary.stories-complete{color:#5d3e8a; font-weight:800;}
+
+  /* labels sit just above their segments and grow at the same proportions,
+     so a label always lives directly over its bar segment. flex-basis:0
+     + proportional flex-grow gives clean alignment regardless of text width. */
+  .seg-labels{display:flex; gap:4px; margin-bottom:5px;}
+  .seg-label-text{font-size:.66rem; font-weight:700; color:var(--muted);
+    font-variant-numeric:tabular-nums; padding-left:.2rem;}
+  .tier-labels #seg-label-t1{flex-basis:0; flex-grow:7;}
+  .tier-labels #seg-label-t2{flex-basis:0; flex-grow:16;}
+  .tier-labels #seg-label-t3{flex-basis:0; flex-grow:43;}
+
+  /* bars + segments */
+  .progress-bars{display:flex; gap:4px; height:18px;}
+  .seg{position:relative; border-radius:5px; overflow:hidden;
+    background:#ececef;}
+  .seg-t1{flex-basis:0; flex-grow:7;  background:#ffe6dd;}
+  .seg-t2{flex-basis:0; flex-grow:16; background:#dcf2e8;}
+  .seg-t3{flex-basis:0; flex-grow:43; background:#ececef;}
+  .seg-story{flex-basis:0; flex-grow:1; background:#ede0fa; height:14px;}
+  .stories-bars{height:14px;}
+  /* the fill grows left to right, transitioning smoothly so a +Add or
+     a typed character feels like progress instead of a snap. */
+  .seg-fill{position:absolute; left:0; top:0; bottom:0; width:0%;
+    transition:width .18s ease;}
+  .seg-t1 .seg-fill{background:linear-gradient(to right, #ff8d7a, #c84b32);}
+  .seg-t2 .seg-fill{background:linear-gradient(to right, #2cc285, #157a51);}
+  .seg-t3 .seg-fill{background:linear-gradient(to right, #9a9aa3, #5e6068);}
+  .seg-story .seg-fill{background:linear-gradient(to right, #b388e0, #8b5cc7);}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <a class="back" href="/profile">← Profile</a>
+  <div>
+    <h1>Add a company</h1>
+    <div class="sub">Fill the tiers, tell the stories — they become this job's data.</div>
+  </div>
+  <button class="editbtn" id="edit-btn">Edit</button>
+  <button class="save" id="save-btn">Save job</button>
+</div>
+
+<!-- Progress block — the two-row dashboard of tier + stories readiness.
+     Refreshed live by refreshStatus() on every keystroke + redraw.
+     The three tier segments use flex-grow proportional to their var
+     counts (7 / 16 / 43) so the bar's geometry mirrors the work.  The
+     stories segment is its own row because story is a parallel rail to
+     the tier system — engagement-active, optional unless started. -->
+<div class="progress-block" id="progress-block">
+  <div class="progress-row">
+    <div class="progress-head">
+      <div class="progress-title">Tier progress</div>
+      <div class="progress-summary" id="progress-summary-tier">Just started · 0/66</div>
+    </div>
+    <div class="seg-labels tier-labels">
+      <span class="seg-label-text" id="seg-label-t1">T1 0/7</span>
+      <span class="seg-label-text" id="seg-label-t2">T2 0/16</span>
+      <span class="seg-label-text" id="seg-label-t3">T3 0/43</span>
+    </div>
+    <div class="progress-bars tier-bars">
+      <div class="seg seg-t1"><div class="seg-fill" id="seg-fill-t1"></div></div>
+      <div class="seg seg-t2"><div class="seg-fill" id="seg-fill-t2"></div></div>
+      <div class="seg seg-t3"><div class="seg-fill" id="seg-fill-t3"></div></div>
+    </div>
+  </div>
+  <div class="progress-row">
+    <div class="progress-head">
+      <div class="progress-title">Stories <span class="optional">— optional engagement track</span></div>
+      <div class="progress-summary" id="progress-summary-stories">inactive · 0/13</div>
+    </div>
+    <div class="progress-bars stories-bars">
+      <div class="seg seg-story"><div class="seg-fill" id="seg-fill-story"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="namebox">
+  <label for="company">Company name</label>
+  <input id="company" type="text" placeholder="e.g. ExampleCo Manufacturing" autocomplete="off">
+</div>
+
+<div class="feature-slot" id="feature-slot">
+  <div class="fs-row">
+    <div>
+      <div class="fs-label">Intake</div>
+      <div class="fs-body">Paste an intake card to fill — or clear — this job's
+        fields in one move. One card adds or subtracts; paste several to batch.</div>
+    </div>
+    <button class="fs-btn" id="intake-open">Paste a card</button>
+  </div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div class="sheet" id="sheet"></div>
+<div class="status" id="status">Loading the 88-variable Index…</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="intake-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2>Intake — paste a card</h2>
+        <div class="mh-sub">card: slot.intent · 1 adds, 2 subtracts · paste several to batch</div>
+      </div>
+      <button class="modal-x" id="intake-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <textarea class="intake-text" id="intake-text" spellcheck="false"
+placeholder="card: 1.1
+Inputs: 2, 5
+C1 Identity
+legal_name: ExampleCo Manufacturing Inc.
+date_of_incorporation: 1962-03-01"></textarea>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="intake-preview">Preview</button>
+        <button class="btn-primary" id="intake-apply" disabled>Apply to form</button>
+      </div>
+      <div class="pv" id="intake-preview-area">
+        <div class="pv-empty">Paste a card above and press Preview.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* job.html — the job editor.
+   It fetches the 79 Index variables and routes the user through the
+   By Tier view, whose picker has four options:
+     · Tier 1 — super tight        (the 7 anchor vars)
+     · Tier 2 — large              (depth + the role-level T2 fields)
+     · Tier 3 — varying            (niche company facts, certs, references)
+     · Stories — the engagement track  (the 13 story-track variables)
+   Two ways to fill the form:
+     - by hand — each field renders the control its input_type calls for;
+     - by INTAKE — paste a card and the parser fills (or clears) the form.
+   A VALUES model (variable id -> value) backs the form, so values survive
+   picker switches and the intake has somewhere to write.
+   THE RIVER: the page reads a job id from the URL (/job?id=N). With an id
+   it loads that job and opens LOCKED — read-only until Edit is pressed.
+   With no id it is a new job, editable from the start. Save creates the
+   job on its first save and updates it after, via the /api/jobs endpoints. */
+
+/* FILES — every sheet that holds variables in the data layer.  CF, PI,
+   and Story are the three real sheets in SHEETS (the variables actually
+   group by file there). By Tier is the synthetic fourth sheet whose
+   picker options re-slice those same variables by priority tier and by
+   the story track. VISIBLE_TABS is empty — no tab strip renders; the
+   tier picker is the only navigation. The real sheets stay in FILES so
+   buildSheets, computeStatus, save, and the intake-apply path all walk
+   untouched. */
+const FILES = ['Company Facts', 'Personal Info', 'Story', 'By Tier'];
+const KEY = {'Company Facts':'cf', 'Personal Info':'pi', 'Story':'st',
+             'By Tier':'tv'};
+/* VISIBLE_TABS is currently empty — the tab strip is hidden via .tabs:empty
+   in CSS, and the tier picker (inside the By Tier sheet) is the page's
+   only navigation. The constant is kept so a future change can re-expose
+   a tab simply by adding its name. renderTabs() runs harmlessly with an
+   empty list. */
+const VISIBLE_TABS = [];
+/* FILE_ORDER drives the order of file-section dividers inside the By Tier
+   view: Company Facts cards on top, Personal Info next, Story last. */
+const FILE_ORDER  = {'Company Facts': 0, 'Personal Info': 1, 'Story': 2};
+/* the three "sections" inside the By Tier sheet, in fixed order.  Their
+   exact strings are the picker's option labels — keep them stable, the
+   render code matches on them. */
+const TIER_SECTIONS = {
+  1: 'Tier 1 — super tight',
+  2: 'Tier 2 — large, effort-worthy',
+  3: 'Tier 3 — varying / optional'
+};
+
+/* SECTION_DISPLAY — the human-facing name for each canonical section.
+   The schema uses "P1 Roles", "P2 References", "C3 Certifications" etc.
+   as taxonomy keys (intake cards key on them; the DB stores them; they
+   live in build_synthesis_db.VARIABLES). For the user-visible label we
+   strip the prefix and use plain words so that "Roles" and "References"
+   read as the distinct concepts they are, not "two P-things" that look
+   alike. The canonical name is preserved everywhere data lives. */
+const SECTION_DISPLAY = {
+  'P1 Roles':              'Roles',
+  'P2 References':         'References',
+  'C3':                    'Certifications',           /* legacy alias */
+  'C3 Certifications':     'Certifications',
+  'C3 Industry Memberships': 'Industry Memberships',
+  'S1 People':             'People',
+  'S2 Arc':                'Story Arc',
+  'S3 Operating Model':    'Operating Model'
+};
+function sectionLabel(name){ return SECTION_DISPLAY[name] || name; }
+let SHEETS = {};          /* file -> [ {tier, vars:[...]} ] */
+let VARIABLES = [];       /* the flat live Index, as the API returned it */
+let VALUES = {};          /* variable id -> current value (the form's model) */
+let active = 'By Tier';   /* default landing tab — see VISIBLE_TABS above */
+let activeSection = '';   /* the subsection the picker is currently showing */
+
+/* river state — which job this page edits, and whether it is locked */
+const _urlId = new URLSearchParams(location.search).get('id');
+let JOB_ID = (_urlId && /^\d+$/.test(_urlId)) ? parseInt(_urlId, 10) : null;
+let JOB_SLOT = null;      /* the job's Work Experience slot */
+let LOCKED = false;       /* a job loaded from the database opens read-only */
+let saving = false;       /* reentrancy guard so Save cannot double-fire */
+
+/* sentinel state — reserved value strings ("N/A", and future entries
+   like TBD/UNKNOWN/REDACTED) that bypass type validation everywhere and
+   render as a pill instead of a typed control. The list is fetched from
+   /api/sentinels on boot, so this file never hardcodes it — data.py is
+   the one source of truth. Adding a sentinel there extends the form for
+   free (each entry in SENTINELS becomes a "Mark <name>" button per field). */
+let SENTINELS = [];
+function isSentinel(value){
+  if(value == null) return false;
+  const s = String(value).trim().toLowerCase();
+  return SENTINELS.some(t => s === String(t).toLowerCase());
+}
+
+/* multi-entry state — how many entries each repeating section holds right
+   now. Computed from VALUES on boot and after a save; mutated by the +Add
+   and Remove controls. Singular sections don't appear here. */
+const ENTRY_NOUN = {
+  'P1 Roles':                'role',
+  'P2 References':           'reference',
+  'C3 Certifications':       'certification',
+  'C3':                      'certification',  /* legacy alias, safe to keep */
+  'C3 Industry Memberships': 'membership',
+  'S1 People':               'person',
+  'S2 Arc':                  'chapter',
+  'S3 Operating Model':      'principle',
+};
+function entryNoun(section){ return ENTRY_NOUN[section] || 'entry'; }
+function entryName(section, e){
+  const n = entryNoun(section);
+  return n.charAt(0).toUpperCase() + n.slice(1) + ' ' + e;
+}
+let ENTRIES = {};         /* section name -> current entry count (>= 1) */
+
+/* walk every sheet's tiers to locate one section by name */
+function findTier(section){
+  let found = null;
+  Object.keys(SHEETS).forEach(file => {
+    (SHEETS[file] || []).forEach(t => { if(t.tier === section) found = t; });
+  });
+  return found;
+}
+
+/* derive the per-section entry count from the keys in VALUES -- for each
+   repeating section, N is the highest entry_no seen across the section's
+   variables, floored at 1. Run on boot and whenever VALUES changes wholesale. */
+function computeEntries(){
+  const maxByVid = {};
+  Object.keys(VALUES).forEach(k => {
+    const parts = String(k).split('.');
+    if(parts.length !== 2) return;
+    const vid = parseInt(parts[0], 10), e = parseInt(parts[1], 10);
+    if(!Number.isInteger(vid) || !Number.isInteger(e)) return;
+    if(!maxByVid[vid] || e > maxByVid[vid]) maxByVid[vid] = e;
+  });
+  const out = {};
+  Object.keys(SHEETS).forEach(file => {
+    if(file === 'By Tier') return;          /* synthetic — skip in walks */
+    (SHEETS[file] || []).forEach(t => {
+      if(t.vars.length && t.vars[0].repeats === 1){
+        let max = 1;
+        t.vars.forEach(v => { if(maxByVid[v.id] > max) max = maxByVid[v.id]; });
+        out[t.tier] = max;
+      }
+    });
+  });
+  return out;
+}
+
+/* "total_employee_headcount" -> "Total employee headcount" */
+function pretty(field){
+  const s = String(field).replace(/_/g, ' ');
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+/* group the flat 79 into file -> sections -> variables, first-seen order.
+   `tier` inside `out[file]` is the SECTION NAME (legacy nomenclature,
+   predates the T1/T2/T3 tier concept — don't conflate with v.tier).
+   After the normal pass we also build the synthetic 'By Tier' sheet,
+   which slices the same 79 variables by their T1/T2/T3 priority class. */
+function buildSheets(vars){
+  const out = {};
+  FILES.forEach(f => out[f] = []);
+  vars.forEach(v => {
+    const sheet = out[v.file];
+    if(!sheet) return;
+    let tier = sheet.find(t => t.tier === v.section);
+    if(!tier){ tier = {tier:v.section, vars:[]}; sheet.push(tier); }
+    tier.vars.push(v);
+  });
+  /* synthetic 'By Tier' sheet — four picker options: Tier 1 / Tier 2 /
+     Tier 3 (depth filters across CF and PI) plus Stories (the engagement
+     track for all Story-track variables). Each option is one entry in
+     out['By Tier']. renderTierSection / renderStoriesSection take it
+     from there. VALUES is keyed by vid.entry regardless of which option
+     the user is editing through, so edits flow to the same DB row no
+     matter the surface. */
+  [1, 2, 3].forEach(t => {
+    /* Sort matches by file first (Company Facts → Personal Info → Story),
+       then by id within each file.  Story-track variables are EXCLUDED
+       here — they live under the "Stories" picker option below, not in
+       the depth tiers, so T1/T2/T3 stay focused on company-facts and
+       personal-info content. */
+    const matches = vars.filter(v => v.tier === t && v.track !== 'story').sort((a, b) => {
+      const fa = FILE_ORDER[a.file] == null ? 99 : FILE_ORDER[a.file];
+      const fb = FILE_ORDER[b.file] == null ? 99 : FILE_ORDER[b.file];
+      if(fa !== fb) return fa - fb;
+      return a.id - b.id;
+    });
+    if(matches.length){
+      out['By Tier'].push({tier: TIER_SECTIONS[t], vars: matches});
+    }
+  });
+  /* Stories — the 4th picker option. Holds every Story-track variable
+     across all three S-sections (S1 People, S2 Arc, S3 Operating Model),
+     in id order.  renderStoriesSection groups them back into their home
+     sub-sections as linked-stacks so the user can add/manage multiple
+     people, chapters, principles. The picker option carries the special
+     section name 'Stories' which the render path matches on. */
+  const storyVars = vars.filter(v => v.track === 'story')
+                        .sort((a, b) => a.id - b.id);
+  if(storyVars.length){
+    out['By Tier'].push({tier: 'Stories', vars: storyVars});
+  }
+  return out;
+}
+
+/* the first subsection of a sheet — the picker's default pick */
+function firstSection(file){
+  const tiers = SHEETS[file] || [];
+  return tiers.length ? tiers[0].tier : '';
+}
+
+/* ============================================================
+   DERIVATION ENGINE — JS mirror of data.compute_derived_value
+   ============================================================
+   Two verbs ship today:  count:<section>  and  duration:<vid>,<vid>.
+   The server is the authority on what a derived variable's value IS —
+   save_job recomputes everything and writes it back. This mirror exists
+   only so the form's pill updates the instant the user adds a role or
+   types a new date, before any save. The math here MUST match the
+   Python in data.py — if you add a verb in one place, add it in both.
+   ------------------------------------------------------------ */
+
+/* "2021-05-12" / "2021-05" / "2021" / "present" -> [y,m] or 'ongoing' or null */
+function _parseLooseDate(s){
+  if(s == null) return null;
+  s = String(s).trim();
+  if(!s) return null;
+  if(['present','current','now','ongoing'].indexOf(s.toLowerCase()) >= 0)
+    return 'ongoing';
+  const parts = s.replace(/\//g, '-').split('-');
+  if(parts.length >= 2){
+    const y = parseInt(parts[0], 10), m = parseInt(parts[1], 10);
+    if(!isNaN(y) && y >= 1900 && y <= 2100 && !isNaN(m) && m >= 1 && m <= 12)
+      return [y, m];
+  } else if(parts.length === 1){
+    const y = parseInt(parts[0], 10);
+    if(!isNaN(y) && y >= 1900 && y <= 2100) return [y, 1];
+  }
+  return null;
+}
+
+function _formatDuration(totalMonths, ongoing){
+  if(totalMonths < 0) return null;
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  let out;
+  if(years && months) out = years + 'y ' + months + 'm';
+  else if(years)      out = years + 'y';
+  else if(months)     out = months + 'm';
+  else                out = '<1m';
+  return ongoing ? out + ' · ongoing' : out;
+}
+
+function _computeDuration(startStr, endStr){
+  const start = _parseLooseDate(startStr);
+  const end   = _parseLooseDate(endStr);
+  if(!start || !end) return null;
+  if(start === 'ongoing') return null;
+  const ongoing = (end === 'ongoing');
+  let endYM = end;
+  if(ongoing){
+    const t = new Date();
+    endYM = [t.getFullYear(), t.getMonth() + 1];
+  }
+  const months = (endYM[0] - start[0]) * 12 + (endYM[1] - start[1]);
+  return _formatDuration(months, ongoing);
+}
+
+/* Run one recipe at one entry against the LIVE form state (VALUES + ENTRIES).
+   Returns the computed value as a string, or null when the inputs are not
+   yet there. */
+function computeDerivedValue(recipe, entry){
+  if(!recipe) return null;
+  if(recipe.indexOf('count:') === 0){
+    const section = recipe.slice('count:'.length);
+    const n = ENTRIES[section];
+    return (n == null ? 1 : n);
+  }
+  if(recipe.indexOf('duration:') === 0){
+    const rest = recipe.slice('duration:'.length).split(',');
+    if(rest.length !== 2) return null;
+    const vidA = parseInt(rest[0], 10), vidB = parseInt(rest[1], 10);
+    if(isNaN(vidA) || isNaN(vidB)) return null;
+    return _computeDuration(VALUES[vidA + '.' + entry],
+                            VALUES[vidB + '.' + entry]);
+  }
+  return null;
+}
+
+/* the control a variable's input_type calls for, pre-filled from VALUES.
+   A <select> cannot emit an off-list value; a date input cannot emit a
+   malformed date; a number input takes digits only — the control IS the
+   validation. An unknown or missing input_type falls back to plain text.
+   Derived variables (v.derived != null) render as a read-only pill with
+   the live-computed value instead of an editable control. */
+function renderInput(v, entry){
+  /* derived — read-only pill, live-computed mirror of the server's value.
+     A small "auto" badge plus the value or a faint placeholder when the
+     inputs aren't there yet. */
+  if(v.derived){
+    const val = computeDerivedValue(v.derived, entry);
+    const text = (val == null || val === '') ? '—' : String(val);
+    const tip = (v.derived.indexOf('count:') === 0
+      ? 'Auto — number of entries in ' + v.derived.slice('count:'.length)
+      : 'Auto — duration between the two date fields in this section');
+    /* data-vid/data-entry let refreshDerived() locate this pill and
+       update its value in place when an upstream input changes, without
+       triggering a full sheet redraw (which would disrupt mid-typing). */
+    return '<div class="derived-pill" data-vid="' + v.id +
+      '" data-entry="' + entry + '" title="' + esc(tip) + '">' +
+      '<span class="derived-tag">auto</span>' +
+      '<span class="derived-val">' + esc(text) + '</span></div>';
+  }
+  const cur = VALUES[v.id + '.' + entry];
+  /* sentinel mode — render a pill in place of the typed control, with a
+     ✕ button that clears the sentinel and restores normal editing. */
+  if(isSentinel(cur)){
+    return '<div class="sentinel-pill" data-vid="' + v.id +
+      '" data-entry="' + entry + '">' +
+      '<span>' + esc(String(cur)) + '</span>' +
+      '<button class="sentinel-clear" type="button" data-vid="' + v.id +
+      '" data-entry="' + entry + '" title="Remove ' + esc(String(cur)) +
+      '">✕</button></div>';
+  }
+  const type = v.input_type || 'text';
+  const attrs = ' data-vid="' + v.id + '" data-entry="' + entry + '"';
+  const has = cur != null && cur !== '';
+  if(type === 'select'){
+    const opts = Array.isArray(v.options) ? v.options : [];
+    return '<select' + attrs + '>' +
+      '<option value=""' + (has ? '' : ' selected') + '>— select —</option>' +
+      opts.map(o => '<option' +
+        (has && String(cur).toLowerCase() === o.toLowerCase() ? ' selected' : '') +
+        '>' + esc(o) + '</option>').join('') +
+      '</select>';
+  }
+  const val = has ? ' value="' + esc(cur) + '"' : '';
+  if(type === 'date')   return '<input type="date"' + attrs + val + '>';
+  if(type === 'number') return '<input type="number"' + attrs + val + ' autocomplete="off">';
+  if(type === 'url')    return '<input type="url"' + attrs + val +
+                               ' placeholder="https://…" autocomplete="off">';
+  return '<input type="text"' + attrs + val + ' autocomplete="off">';
+}
+
+/* a small tag beside the field label, so a constrained field reads as
+   constrained at a glance. Plain-text fields get no tag. */
+function typeBadge(v){
+  const label = {select:'choice', date:'date', number:'number', url:'link'}
+    [v.input_type];
+  return label ? '<span class="typ">' + label + '</span>' : '';
+}
+
+/* tier pill — the per-variable priority class. The server stamps tier on
+   every /api/variables row (1=super-tight, 2=large/effort-worthy, 3=varying/
+   optional). When the server hasn't filled it in (older DB, pre-migration),
+   we hide the pill rather than guess. The tooltip carries the long-form
+   explanation so the user sees the meaning on hover. */
+function tierPill(v){
+  const t = v.tier;
+  if(t !== 1 && t !== 2 && t !== 3) return '';
+  const text = {1:'T1', 2:'T2', 3:'T3'}[t];
+  const tip  = {
+    1: 'Tier 1 — super tight. Almost every formula needs this.',
+    2: 'Tier 2 — large; should put effort into it. Unlocks most formulas.',
+    3: 'Tier 3 — varying degrees; almost optional. Unlocks niche formulas.'
+  }[t];
+  return '<span class="tier-pill tier-' + t + '" title="' + esc(tip) +
+    '">' + text + '</span>';
+}
+
+/* one field card — label, the typed control, and the definition hint.
+   The label carries #id, the field name, REPEATS / type / tier pills.
+   The body is the typed control (or the derived pill), the definition
+   hint, and the Mark-N/A buttons (suppressed on derived vars). */
+function renderField(v, entry){
+  const isNa = isSentinel(VALUES[v.id + '.' + entry]);
+  /* Derived variables never get a Mark-N/A button — they can't be
+     "marked", their value comes from the engine. Otherwise render one
+     button per sentinel string from /api/sentinels. */
+  const sentinelMarks = (v.derived || isNa) ? '' : SENTINELS.map(s =>
+    '<button class="sentinel-mark" type="button" data-vid="' + v.id +
+    '" data-entry="' + entry + '" data-sentinel="' + esc(s) +
+    '">Mark ' + esc(s) + '</button>').join('');
+  return '<div class="field"><label>' +
+    '<span class="num">#' + v.id + '</span>' +
+    esc(pretty(v.field)) +
+    (v.repeats ? '<span class="rep">repeats</span>' : '') +
+    typeBadge(v) +
+    tierPill(v) +
+    '</label>' +
+    renderInput(v, entry) +
+    (v.definition ? '<div class="hint">' + esc(v.definition) + '</div>' : '') +
+    sentinelMarks +
+    '</div>';
+}
+
+function renderTabs(){
+  /* Only the visible tabs render — Company Facts and Personal Info exist
+     in the data layer but are reached through the By Tier view, so they
+     don't appear in the strip. Story keeps its own tab; By Tier is the
+     primary editor. */
+  document.getElementById('tabs').innerHTML = VISIBLE_TABS.map(f => {
+    const k = KEY[f];
+    const n = (SHEETS[f] || []).reduce((s, t) => s + t.vars.length, 0);
+    const sub = (f === 'By Tier')
+      ? 'All 79 fields, grouped by priority class'
+      : 'Sheet · ' + n + ' fields';
+    return '<button class="tab ' + k + (f === active ? ' active' : '') +
+      '" data-file="' + esc(f) + '">' +
+      '<span class="tname">' + esc(f) + '</span>' +
+      '<span class="tn">' + esc(sub) + '</span></button>';
+  }).join('');
+}
+
+/* ============================================================
+   RENDER HELPERS — one source of truth for "what a section looks like"
+   ============================================================
+   Every section on every sheet renders through one of these two helpers.
+   That single point of authorship is the reason a +Add button drawn in
+   the tier view looks and behaves identically to one drawn on the Story
+   sheet: the markup and the data attributes are produced by the same
+   line of code. The click handlers further down read ONLY the data
+   attributes, so they don't have to know which surface a button came
+   from — only what section name and entry number it carries.
+   ------------------------------------------------------------ */
+
+/* renderEntryStack — N entry-cards in a column, each containing the
+   passed `vars`, with a +Add button at the bottom and a Remove button on
+   every card when N > 1. `section` is the HOME-section name (e.g.
+   "P1 Roles") and is stamped onto every +Add / Remove button via
+   data-section, so the handlers can find the right entry in ENTRIES no
+   matter which surface fired them.
+   `opts.tierFiltered = true` switches the count line copy from
+   "9 fields each" to "5 tier fields each" — the truthful figure when the
+   tier view passes only the tier-matched subset of a repeating section's
+   variables. */
+function renderEntryStack(section, vars, N, opts){
+  opts = opts || {};
+  const noun = entryNoun(section);
+  const fieldNoun = opts.tierFiltered ? 'tier field' : 'field';
+  /* Display name strips the P1/P2/C3/S1 schema prefix so the user reads
+     "Roles" and "References" as the distinct concepts they are. The
+     section variable still holds the canonical key for data ops. */
+  const label = sectionLabel(section);
+  let html = '<div class="section-count">' +
+    '<span class="section-title">' + esc(label) + '</span> · ' + N + ' ' +
+    esc(noun) + (N === 1 ? '' : 's') + ' · ' + vars.length +
+    ' ' + fieldNoun + (vars.length === 1 ? '' : 's') + ' each</div>';
+  html += '<div class="entries-list">';
+  for(let e = 1; e <= N; e++){
+    html += '<div class="entry-card" data-entry="' + e + '">';
+    html += '<div class="entry-head"><span class="entry-name">' +
+      esc(entryName(section, e)) + '</span>';
+    if(N > 1){
+      html += '<button class="entry-del" type="button" data-section="' +
+        esc(section) + '" data-entry="' + e + '">Remove</button>';
+    }
+    html += '</div><div class="fields">';
+    vars.forEach(v => { html += renderField(v, e); });
+    html += '</div></div>';
+  }
+  html += '</div>';
+  html += '<button class="entry-add" type="button" data-section="' +
+    esc(section) + '">+ Add another ' + esc(noun) + '</button>';
+  return html;
+}
+
+/* renderSingularBlock — a flat 2-column grid of fields, all sharing
+   entry 1 (singular variables never have more than one entry). `opts.bare
+   = true` skips the section-count header, which the tier view sets when
+   the file-header above the block already labels the group. */
+function renderSingularBlock(section, vars, opts){
+  opts = opts || {};
+  let html = '';
+  if(!opts.bare){
+    const n = vars.length;
+    html += '<div class="section-count">' + esc(section) + ' — ' + n +
+      ' field' + (n === 1 ? '' : 's') + '</div>';
+  }
+  html += '<div class="fields">';
+  vars.forEach(v => { html += renderField(v, 1); });
+  html += '</div>';
+  return html;
+}
+
+/* renderTierSection — the body of one tier within the By Tier view.
+   Walks the tier's vars (already sorted by [file, id] in buildSheets),
+   groups them by their home FILE for the visible divider the user asked
+   for, and then SUB-GROUPS within each file by HOME SECTION so that:
+     * Singular vars from a file all flow as ONE flat 2-column grid.
+     * Each REPEATING section gets its own full entry-card stack with
+       + Add another / Remove buttons — same UI as the home sheet, just
+       embedded inside the tier view. Cardinality stays a property of the
+       home section (ENTRIES["P1 Roles"]), so the same +Add fires from
+       either surface, writes the same key, and is reflected back when
+       you switch tier or sheet. */
+function renderTierSection(t){
+  let html = '<div class="section-count">' + esc(t.tier) + ' — ' +
+    t.vars.length + ' field' + (t.vars.length === 1 ? '' : 's') + '</div>';
+  /* group by home file ---------------------------------------------- */
+  const byFile = {};
+  t.vars.forEach(v => {
+    if(!byFile[v.file]) byFile[v.file] = [];
+    byFile[v.file].push(v);
+  });
+  ['Company Facts', 'Personal Info', 'Story'].forEach(file => {
+    const list = byFile[file];
+    if(!list || !list.length) return;
+    /* split this file's tier-vars into singular ones (rendered as a
+       single flat grid) and repeating ones (one entry-stack per home
+       section, in id order). */
+    const singular = [];
+    const byHomeSection = {};
+    list.forEach(v => {
+      if(v.repeats){
+        if(!byHomeSection[v.section]) byHomeSection[v.section] = [];
+        byHomeSection[v.section].push(v);
+      } else {
+        singular.push(v);
+      }
+    });
+    html += '<div class="file-group">';
+    html += '<div class="file-header">' + esc(file) +
+      ' <span class="file-count">· ' + list.length + ' field' +
+      (list.length === 1 ? '' : 's') + ' in this tier</span></div>';
+    /* Order inside a file group:
+       1. REPEATING entry-stacks first — they're structurally linked
+          (each entry's fields belong together across roles / certs /
+          memberships / references) so they read as a heavier unit.
+          The .linked-stack wrapper gives them a warm color treatment
+          so the eye separates them from the singular flow below.
+       2. SINGULAR cards after — the flat 2-column grid that the user
+          can scan top-to-bottom without re-orienting between entries.
+       This matches the user's "roles on top, distinct color" ask. */
+    const repeatSections = Object.keys(byHomeSection).sort((a, b) =>
+      byHomeSection[a][0].id - byHomeSection[b][0].id);
+    repeatSections.forEach(sec => {
+      const sectionVars = byHomeSection[sec];
+      const N = ENTRIES[sec] || 1;
+      /* Two layers of identity on each stack:
+           from-<file>          family color (PI green, CF blue, etc.)
+           data-home-section    the EXACT section ("P1 Roles" / "P2 References")
+         CSS targets data-home-section for the section's own distinct color,
+         so Roles and References are visibly different even though both live
+         in PI. The from-<file> class stays as a safety fallback when a new
+         section is added but CSS hasn't caught up yet. */
+      const fileKey = KEY[file] || '';
+      html += '<div class="linked-stack from-' + fileKey +
+        '" data-home-section="' + esc(sec) + '">';
+      html += renderEntryStack(sec, sectionVars, N, {tierFiltered:true});
+      html += '</div>';
+    });
+    if(singular.length){
+      html += renderSingularBlock(file, singular, {bare:true});
+    }
+    html += '</div>';   /* end file-group */
+  });
+  return html;
+}
+
+/* renderStoriesSection — the body when the Stories picker option is
+   active. Groups the 13 Story-track variables by their home section
+   (S1 People / S2 Arc / S3 Operating Model) and renders each as its
+   own linked-stack with +Add another / Remove buttons. The .stories
+   class on the wrapper picks up a violet color treatment so the user
+   knows they're in the narrative track, not a tier. Sub-sections show
+   in id order so the natural arc of the narrative reads top-to-bottom:
+   people first, then chapters, then operating principles. */
+function renderStoriesSection(t){
+  let html = '<div class="section-count">Stories — ' + t.vars.length +
+    ' fields across the three narrative sections.' +
+    ' <span class="flat-note">Add a person, a chapter, ' +
+    'a principle — each one is its own entry.</span></div>';
+  /* group by home section, preserving id order */
+  const bySection = {};
+  t.vars.forEach(v => {
+    if(!bySection[v.section]) bySection[v.section] = [];
+    bySection[v.section].push(v);
+  });
+  const ordered = Object.keys(bySection).sort((a, b) =>
+    bySection[a][0].id - bySection[b][0].id);
+  ordered.forEach(sec => {
+    const sectionVars = bySection[sec];
+    const N = ENTRIES[sec] || 1;
+    html += '<div class="linked-stack story-stack" data-home-section="' +
+      esc(sec) + '">';
+    html += renderEntryStack(sec, sectionVars, N);
+    html += '</div>';
+  });
+  return html;
+}
+
+function renderSheet(){
+  const tiers = SHEETS[active] || [];
+  const total = tiers.reduce((s, t) => s + t.vars.length, 0);
+  const isTierView = (active === 'By Tier');
+
+  /* sheet header + picker copy varies by sheet kind ----------------- */
+  let html;
+  if(isTierView){
+    html = '<div class="sheet-head">' + total +
+      ' fields — pick a tier to fill, or tell the story</div>';
+    html += '<label class="picker-label" for="section-picker">Tier or track to view</label>';
+  } else {
+    html = '<div class="sheet-head">' + esc(active) + ' — ' + total +
+      ' fields across ' + tiers.length + ' section' +
+      (tiers.length === 1 ? '' : 's') + '</div>';
+    html += '<label class="picker-label" for="section-picker">Section to fill</label>';
+  }
+  html += '<select class="section-picker" id="section-picker">' +
+    tiers.map(t => {
+      const n = t.vars.length;
+      return '<option value="' + esc(t.tier) + '"' +
+        (t.tier === activeSection ? ' selected' : '') + '>' +
+        esc(t.tier) + '  ·  ' + n + ' field' + (n === 1 ? '' : 's') +
+        '</option>';
+    }).join('') +
+    '</select>';
+
+  /* every section is rendered; only the picked one is visible.  The
+     three rendering branches all delegate to the helpers above so that
+     entry-stack and singular-block markup is identical wherever it is
+     drawn — the entry-stack rendered inside the tier view behaves the
+     same as the one rendered on Story. */
+  tiers.forEach(t => {
+    html += '<div class="section-body" data-section="' + esc(t.tier) + '"' +
+      (t.tier === activeSection ? '' : ' hidden') + '>';
+    if(isTierView && t.tier === 'Stories'){
+      /* the Story track gets its own renderer — violet linked-stacks for
+         every S1/S2/S3 sub-section, no file-group headers. */
+      html += renderStoriesSection(t);
+    } else if(isTierView){
+      html += renderTierSection(t);
+    } else if(t.vars.length && t.vars[0].repeats === 1){
+      html += renderEntryStack(t.tier, t.vars, ENTRIES[t.tier] || 1);
+    } else {
+      html += renderSingularBlock(t.tier, t.vars);
+    }
+    html += '</div>';
+  });
+
+  document.getElementById('sheet').innerHTML = html;
+  applyLock();           /* a redraw makes fresh controls — re-apply the lock */
+}
+
+/* show one subsection, hide the rest — by toggling, never re-rendering */
+function showSection(name){
+  activeSection = name;
+  const picker = document.getElementById('section-picker');
+  if(picker) picker.value = name;
+  document.getElementById('sheet')
+    .querySelectorAll('.section-body')
+    .forEach(b => { b.hidden = (b.dataset.section !== name); });
+}
+
+/* tab switch — change sheet, reset the picker to that sheet's first section.
+   renderSheet redraws from VALUES, so typed values survive the switch. */
+document.getElementById('tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if(!tab) return;
+  active = tab.dataset.file;
+  activeSection = firstSection(active);
+  renderTabs();
+  renderSheet();
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
+/* one #sheet listener does two jobs: the section picker, and capturing
+   every field edit into VALUES so the model stays the source of truth */
+function captureValue(e){
+  const el = e.target;
+  if(el && el.dataset && el.dataset.vid && el.dataset.entry){
+    VALUES[el.dataset.vid + '.' + el.dataset.entry] = el.value;
+    refreshDerived();               /* a derived pill may key off this field */
+    refreshStatus();                /* live update as the user types */
+  }
+}
+
+/* refreshDerived — walk every derived-pill on screen and recompute it
+   in place. Called from captureValue (so typing into a start/end input
+   updates the duration pill on the same card) and would also be safe
+   to call from anywhere VALUES or ENTRIES changes, though renderSheet's
+   redraw already covers the +Add / Remove paths. */
+function refreshDerived(){
+  document.querySelectorAll('.derived-pill').forEach(el => {
+    const vid   = parseInt(el.dataset.vid, 10);
+    const entry = parseInt(el.dataset.entry, 10);
+    const v = VARIABLES.find(x => x.id === vid);
+    if(!v || !v.derived) return;
+    const val = computeDerivedValue(v.derived, entry);
+    const span = el.querySelector('.derived-val');
+    if(span) span.textContent = (val == null || val === '') ? '—' : String(val);
+  });
+}
+document.getElementById('sheet').addEventListener('input', captureValue);
+document.getElementById('sheet').addEventListener('change', e => {
+  if(e.target.id === 'section-picker'){ showSection(e.target.value); return; }
+  captureValue(e);
+});
+
+/* +Add and Remove for repeating sections — one delegated click listener.
+   +Add bumps ENTRIES[section] and redraws. Remove shifts the entries below
+   it down one slot, drops the last, and decrements ENTRIES; the next Save
+   sends an `entries` cap telling the database to forget anything beyond. */
+document.getElementById('sheet').addEventListener('click', e => {
+  if(LOCKED || saving) return;
+  const add = e.target.closest('.entry-add');
+  if(add){
+    const section = add.dataset.section;
+    ENTRIES[section] = (ENTRIES[section] || 1) + 1;
+    /* only re-aim activeSection when the home section IS the active
+       picker entry — i.e., when this click was on the home sheet's stack.
+       Inside the tier view the picker shows "Tier 2 — ..." not "P1 Roles",
+       and stomping activeSection would dump the user back to a blank
+       picker. We keep the tier picked, the stack just redraws with N+1. */
+    const onActiveSheet = (SHEETS[active] || []).some(t => t.tier === section);
+    if(onActiveSheet) activeSection = section;
+    renderSheet();
+    return;
+  }
+  const del = e.target.closest('.entry-del');
+  if(del){
+    const section = del.dataset.section;
+    const entry = parseInt(del.dataset.entry, 10);
+    removeEntry(section, entry);
+    return;
+  }
+  /* Mark <sentinel>: stamp the canonical sentinel into VALUES at (vid, entry) */
+  const naMark = e.target.closest('.sentinel-mark');
+  if(naMark){
+    const key = naMark.dataset.vid + '.' + naMark.dataset.entry;
+    VALUES[key] = naMark.dataset.sentinel;
+    renderSheet();
+    return;
+  }
+  /* ✕ on the sentinel pill: clear the sentinel and let the typed input return */
+  const naClear = e.target.closest('.sentinel-clear');
+  if(naClear){
+    const key = naClear.dataset.vid + '.' + naClear.dataset.entry;
+    delete VALUES[key];
+    renderSheet();
+    return;
+  }
+});
+
+function removeEntry(section, entry){
+  const tier = findTier(section);
+  if(!tier) return;
+  const N = ENTRIES[section] || 1;
+  if(N <= 1) return;
+  const hasValues = tier.vars.some(v => {
+    const k = v.id + '.' + entry;
+    return VALUES[k] != null && VALUES[k] !== '';
+  });
+  if(hasValues && !confirm('Remove ' + entryNoun(section) + ' ' + entry +
+                           '? Its values will be lost.')) return;
+  /* IMPORTANT — shift ALL the section's vars, not just the tier-visible
+     ones. tier.vars here is the home section's full variable list (the
+     hidden T3 fields of a P1 Role, for instance), so removing role 2
+     from the tier view cleanly drops role 2's entire record. */
+  tier.vars.forEach(v => {
+    for(let e = entry; e < N; e++){
+      const next = VALUES[v.id + '.' + (e + 1)];
+      if(next != null) VALUES[v.id + '.' + e] = next;
+      else delete VALUES[v.id + '.' + e];
+    }
+    delete VALUES[v.id + '.' + N];
+  });
+  ENTRIES[section] = N - 1;
+  /* preserve the tier-view picker — same reasoning as the +Add handler:
+     only steer activeSection when the home section is actually on the
+     active sheet. From the tier view, leave the tier picked. */
+  const onActiveSheet = (SHEETS[active] || []).some(t => t.tier === section);
+  if(onActiveSheet) activeSection = section;
+  renderSheet();
+}
+
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+/* ============================================================
+   THE RIVER — lock state, and Save talking to /api/jobs
+   ============================================================ */
+
+/* a loaded job opens locked: every control disabled until Edit. A new job,
+   and a job after Edit, is unlocked. applyLock() is the ONE place the lock
+   is expressed — renderSheet() calls it after every redraw, and the Edit
+   and Save handlers call it when the lock flips. */
+function applyLock(){
+  const dis = LOCKED;
+  document.getElementById('sheet')
+    .querySelectorAll('[data-vid]').forEach(el => { el.disabled = dis; });
+  document.querySelectorAll('.entry-add, .entry-del').forEach(el => {
+    el.disabled = dis;
+  });
+  document.getElementById('company').disabled = dis;
+  document.getElementById('intake-open').disabled = dis;
+  document.getElementById('save-btn').disabled = dis;
+  document.getElementById('edit-btn').disabled = !dis;
+  refreshHeader();
+  refreshStatus();           /* every redraw refreshes the readiness badge */
+}
+
+/* readiness status — the same rule data.compute_job_status computes,
+   run live in the browser against VALUES + ENTRIES so the progress
+   bars update as fields fill. Tier-graduated (T1 → T2 → T3) and
+   engagement-aware (story vars only count toward overall when at
+   least one story field has content).  Returns the enriched shape
+   documented in compute_job_status; this MUST match the server. */
+function computeStatus(){
+  const buckets = {
+    t1:    {assessed:0, total:0, pending:[]},
+    t2:    {assessed:0, total:0, pending:[]},
+    t3:    {assessed:0, total:0, pending:[]},
+    story: {assessed:0, total:0, pending:[]},
+  };
+  Object.keys(SHEETS).forEach(file => {
+    if(file === 'By Tier') return;          /* synthetic — would double-count */
+    (SHEETS[file] || []).forEach(t => {
+      const repeats = t.vars.length && t.vars[0].repeats === 1;
+      const N = repeats ? (ENTRIES[t.tier] || 1) : 1;
+      t.vars.forEach(v => {
+        /* route by track first, then tier — track wins because story
+           vars are an engagement rail, not a depth tier. */
+        const bkey = (v.track === 'story') ? 'story' : ('t' + v.tier);
+        const bucket = buckets[bkey];
+        if(!bucket) return;                  /* safety: unknown classification */
+        for(let e = 1; e <= N; e++){
+          bucket.total++;
+          let ok;
+          if(v.derived){
+            const dv = computeDerivedValue(v.derived, e);
+            ok = (dv != null && String(dv).trim() !== '');
+          } else {
+            const val = VALUES[v.id + '.' + e];
+            ok = (val != null && String(val).trim() !== '');
+          }
+          if(ok) bucket.assessed++;
+          else bucket.pending.push({vid:v.id, entry:e, section:t.tier, field:v.field});
+        }
+      });
+    });
+  });
+
+  const isReady = b => b.total > 0 && b.assessed === b.total;
+  const t1 = buckets.t1, t2 = buckets.t2, t3 = buckets.t3, s = buckets.story;
+  /* graduated readiness — each tier needs the previous one done */
+  const t1_ready = isReady(t1);
+  const t2_ready = t1_ready && isReady(t2);
+  const t3_ready = t2_ready && isReady(t3);
+  const stories_active = s.assessed > 0;
+  const stories_ready  = isReady(s);
+
+  let tier_level = 'none';
+  if(t3_ready)      tier_level = 't3';
+  else if(t2_ready) tier_level = 't2';
+  else if(t1_ready) tier_level = 't1';
+
+  /* engagement-aware overall: stories don't count until they're engaged. */
+  const non_story_assessed = t1.assessed + t2.assessed + t3.assessed;
+  const non_story_total    = t1.total    + t2.total    + t3.total;
+  const non_story_pending  = t1.pending.concat(t2.pending, t3.pending);
+
+  const overall_assessed = stories_active
+    ? non_story_assessed + s.assessed
+    : non_story_assessed;
+  const overall_total = stories_active
+    ? non_story_total + s.total
+    : non_story_total;
+  const overall_pending = stories_active
+    ? non_story_pending.concat(s.pending)
+    : non_story_pending;
+  const overall_ready = t3_ready && (!stories_active || stories_ready);
+
+  return {
+    status:         overall_ready ? 'ready' : 'in_progress',
+    tier_level:     tier_level,
+    stories_active: stories_active,
+    assessed:       overall_assessed,
+    total:          overall_total,
+    pending:        overall_pending,
+    tier_progress: {
+      t1: Object.assign({}, t1, {ready: isReady(t1)}),
+      t2: Object.assign({}, t2, {ready: isReady(t2)}),
+      t3: Object.assign({}, t3, {ready: isReady(t3)}),
+    },
+    stories_progress: Object.assign({}, s,
+      {ready: stories_ready, active: stories_active}),
+  };
+}
+
+/* refreshStatus — drive the progress block from computeStatus().  The
+   tier bars and the stories bar are updated in place (style.width on
+   the .seg-fill divs); the segment labels show "T<n> <assessed>/<total>";
+   the summary lines show the tier level + counts.  No DOM rebuild —
+   only attribute writes — so the transition CSS handles the animation. */
+function refreshStatus(){
+  const block = document.getElementById('progress-block');
+  if(!block) return;
+  const s = computeStatus();
+
+  /* ---- tier bars + labels --------------------------------------------- */
+  let totalAssessed = 0, totalTotal = 0;
+  ['t1', 't2', 't3'].forEach(k => {
+    const bk    = s.tier_progress[k];
+    const fill  = document.getElementById('seg-fill-' + k);
+    const label = document.getElementById('seg-label-' + k);
+    if(!fill || !label) return;
+    const pct = bk.total > 0 ? (bk.assessed / bk.total) * 100 : 0;
+    fill.style.width = pct.toFixed(2) + '%';
+    label.textContent = k.toUpperCase() + ' ' + bk.assessed + '/' + bk.total;
+    totalAssessed += bk.assessed;
+    totalTotal    += bk.total;
+  });
+
+  /* ---- tier summary --------------------------------------------------- */
+  const tierWords = {
+    none: 'Just started',
+    t1:   'Tier 1 ready',
+    t2:   'Tier 2 ready',
+    t3:   'Tier 3 ready',
+  };
+  const tsum = document.getElementById('progress-summary-tier');
+  if(tsum){
+    tsum.textContent = (tierWords[s.tier_level] || s.tier_level) +
+      '  ·  ' + totalAssessed + '/' + totalTotal;
+    tsum.className = 'progress-summary tier-' + s.tier_level;
+  }
+
+  /* ---- stories bar + summary ----------------------------------------- */
+  const sp = s.stories_progress;
+  const sFill  = document.getElementById('seg-fill-story');
+  if(sFill){
+    const pct = sp.total > 0 ? (sp.assessed / sp.total) * 100 : 0;
+    sFill.style.width = pct.toFixed(2) + '%';
+  }
+  const ssum = document.getElementById('progress-summary-stories');
+  if(ssum){
+    const state = sp.active ? (sp.ready ? 'complete' : 'active') : 'inactive';
+    ssum.textContent = state + '  ·  ' + sp.assessed + '/' + sp.total;
+    ssum.className = 'progress-summary stories-' + state;
+  }
+}
+
+/* the bar's heading and subline, kept honest with the page's state */
+function refreshHeader(){
+  const name = document.getElementById('company').value.trim();
+  document.querySelector('.bar h1').textContent =
+    JOB_ID == null ? 'Add a company' : (name || 'Job #' + JOB_ID);
+  document.querySelector('.bar .sub').textContent =
+    JOB_ID == null ? 'Fill the tiers, tell the stories — they become the job record.'
+    : LOCKED ? 'Saved job · press Edit to change it.'
+    : 'Editing · press Save to commit your changes.';
+}
+
+/* Save — create the job on its first save, update it on every save after.
+   A new job is given the next free slot, so it lands as the next row in
+   Work Experience. The whole exchange is the /api/jobs endpoints; nothing
+   else on this page talks to the database. */
+async function saveJob(){
+  if(LOCKED || saving) return;
+  const name = document.getElementById('company').value.trim();
+  if(!name){ toast('Give the company a name before saving.'); return; }
+  saving = true;
+  try {
+    if(JOB_ID == null){
+      /* first save — find the next free slot, then create the blank job */
+      const jobs = await fetch('/api/jobs').then(r => r.json());
+      const nextSlot = jobs.reduce((m, j) => Math.max(m, j.slot || 0), 0) + 1;
+      const made = await fetch('/api/jobs', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({name:name, slot:nextSlot})});
+      if(!made.ok){
+        const e = await made.json().catch(() => ({}));
+        toast('Could not create the job — ' + (e.error || 'HTTP ' + made.status));
+        return;
+      }
+      const job = await made.json();
+      JOB_ID = job.id; JOB_SLOT = job.slot;
+      history.replaceState(null, '', '/job?id=' + JOB_ID);
+    }
+    /* declare cardinality so the database matches the form's current shape:
+       any entry above N for a repeating variable is dropped server-side. */
+    const entriesMap = {};
+    Object.keys(SHEETS).forEach(file => {
+      if(file === 'By Tier') return;        /* synthetic — entries live on home sheets */
+      (SHEETS[file] || []).forEach(t => {
+        if(t.vars.length && t.vars[0].repeats === 1){
+          const N = ENTRIES[t.tier] || 1;
+          t.vars.forEach(v => { entriesMap[v.id] = N; });
+        }
+      });
+    });
+    /* save the answers — new and existing jobs alike land here */
+    const res = await fetch('/api/jobs/' + JOB_ID, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name:name, slot:JOB_SLOT, values:VALUES,
+                            entries:entriesMap})});
+    if(!res.ok){
+      const e = await res.json().catch(() => ({}));
+      toast('Could not save — ' + (e.error || 'HTTP ' + res.status));
+      return;
+    }
+    const saved = await res.json();
+    VALUES = saved.values || {};       /* re-sync from the database's echo */
+    JOB_SLOT = saved.slot;
+    ENTRIES = computeEntries();        /* re-derive the per-section counts */
+    LOCKED = true;                     /* a saved job locks itself again */
+    renderSheet();                     /* redraw from VALUES; re-applies lock */
+    toast('Saved — “' + (saved.name || name) + '” is job #' + JOB_ID +
+          ', slot ' + JOB_SLOT + '.');
+  } catch(err){
+    toast('Could not reach the database — ' + err);
+  } finally {
+    saving = false;
+  }
+}
+
+document.getElementById('save-btn').addEventListener('click', saveJob);
+document.getElementById('edit-btn').addEventListener('click', () => {
+  if(!LOCKED) return;
+  LOCKED = false;
+  applyLock();
+  toast('Editing unlocked — make your changes, then Save.');
+});
+document.getElementById('company').addEventListener('input', refreshHeader);
+
+/* ============================================================
+   INTAKE — paste a card, fill (or clear) the sheets
+   ============================================================
+   A card:
+     card: <slot>.<intent>     intent 1 = add, 2 = subtract
+     Inputs: <#id, #id, ...>    the variables the card declares
+     <Section name>             a line with no colon = a section header
+     <field>: <value>           a line with a colon = a field
+   parseIntake() is deterministic — it never throws; every problem
+   becomes a line-numbered error and that card is marked unusable.
+   A paste may hold several cards; each `card:` line opens a new one. */
+
+function parseIntake(text){
+  /* lookup maps off the live Index */
+  const byId = {}, sectionField = {}, sectionName = {}, sectionRepeats = {};
+  VARIABLES.forEach(v => {
+    byId[v.id] = v;
+    sectionName[String(v.section).toLowerCase()] = v.section;
+    sectionRepeats[v.section] = v.repeats;
+    sectionField[(v.section + '|' + v.field).toLowerCase()] = v;
+    sectionField[(v.section + '|' + pretty(v.field)).toLowerCase()] = v;
+  });
+
+  const lines = String(text).split(/\r?\n/);
+  const out = {cards: [], preErrors: []};
+  let card = null, section = null, entry = 1;
+
+  lines.forEach((raw, i) => {
+    const lineNo = i + 1;
+    const line = raw.trim();
+    if(line === '' || line.charAt(0) === '#') return;   /* blank / comment */
+
+    const colon = line.indexOf(':');
+    const hasColon = colon !== -1;
+    const key = hasColon ? line.slice(0, colon).trim().toLowerCase() : '';
+    const value = hasColon ? line.slice(colon + 1).trim() : '';
+
+    /* a new card */
+    if(hasColon && key === 'card'){
+      card = {slot:null, intent:null, codeLine:lineNo, hasInputs:false,
+              declared:[], fields:[], errors:[], ok:false, intentName:'?'};
+      out.cards.push(card);
+      section = null;
+      entry = 1;
+      const m = value.match(/^(\d+)\s*\.\s*(\d+)$/);
+      if(!m){
+        card.errors.push({line:lineNo, msg:'card code must be slot.intent — e.g. card: 1.1'});
+      } else {
+        card.slot = parseInt(m[1], 10);
+        card.intent = parseInt(m[2], 10);
+        if(card.intent !== 1 && card.intent !== 2)
+          card.errors.push({line:lineNo,
+            msg:'intent must be 1 (add) or 2 (subtract) — got ' + card.intent});
+      }
+      return;
+    }
+
+    if(!card){
+      out.preErrors.push({line:lineNo, msg:'"' + line + '" sits before any card: line'});
+      return;
+    }
+
+    /* the Inputs manifest */
+    if(hasColon && key === 'inputs'){
+      if(card.hasInputs)
+        card.errors.push({line:lineNo, msg:'a card may have only one Inputs: line'});
+      card.hasInputs = true;
+      value.split(',').forEach(tok => {
+        tok = tok.trim();
+        if(tok === '') return;
+        if(!/^\d+$/.test(tok)){
+          card.errors.push({line:lineNo,
+            msg:'Inputs takes variable numbers — "' + tok + '" is not one'});
+          return;
+        }
+        const id = parseInt(tok, 10);
+        if(!byId[id]) card.errors.push({line:lineNo,
+          msg:'#' + id + ' is not a variable in the Index'});
+        else card.declared.push(id);
+      });
+      return;
+    }
+
+    /* `entry: N` — set the current entry slot inside a repeating section.
+       Subsequent field lines write to (variable, entry) until the next
+       `entry:` line or a new section header. */
+    if(hasColon && key === 'entry'){
+      if(!section){
+        card.errors.push({line:lineNo,
+          msg:'entry: appears before any section header'});
+        return;
+      }
+      if(sectionRepeats[section] !== 1){
+        card.errors.push({line:lineNo,
+          msg:'entry: is only valid in a repeating section — "' +
+              section + '" is singular'});
+        return;
+      }
+      if(!/^\d+$/.test(value)){
+        card.errors.push({line:lineNo,
+          msg:'entry: takes a positive whole number — "' + value + '" is not one'});
+        return;
+      }
+      const n = parseInt(value, 10);
+      if(n < 1){
+        card.errors.push({line:lineNo,
+          msg:'entry: must be 1 or greater — got ' + n});
+        return;
+      }
+      entry = n;
+      return;
+    }
+
+    /* a colon-less line is a section header (or a stray value) */
+    if(!hasColon){
+      const canon = sectionName[line.toLowerCase()];
+      if(canon){ section = canon; entry = 1; }
+      else card.errors.push({line:lineNo, msg:'"' + line + '" is not a section name'});
+      return;
+    }
+
+    /* otherwise it is a field line */
+    if(!section){
+      card.errors.push({line:lineNo,
+        msg:'field "' + key + '" appears before any section header'});
+      return;
+    }
+    const v = sectionField[(section + '|' + key).toLowerCase()];
+    if(!v){
+      card.errors.push({line:lineNo, msg:'"' + key + '" is not a field of ' + section});
+      return;
+    }
+    if(card.fields.some(f => f.id === v.id && f.entry === entry)){
+      card.errors.push({line:lineNo,
+        msg:'#' + v.id + ' is set twice at entry ' + entry + ' in this card'});
+      return;
+    }
+    card.fields.push({id:v.id, field:v.field, section:section, value:value,
+                      line:lineNo, variable:v, entry:entry,
+                      valueError:null, applyValue:value});
+  });
+
+  out.cards.forEach(validateCard);
+  return out;
+}
+
+/* one card's value is checked against the variable's typed control */
+function validateValue(v, value){
+  if(isSentinel(value)) return null;   /* sentinels bypass type validation */
+  const t = v.input_type || 'text';
+  if(t === 'select'){
+    const opts = v.options || [];
+    const hit = opts.some(o => o.toLowerCase() === value.toLowerCase());
+    return hit ? null : 'must be one of: ' + opts.join(', ');
+  }
+  if(t === 'date')
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) ? null : 'must be a date — YYYY-MM-DD';
+  if(t === 'number')
+    return /^-?\d+(\.\d+)?$/.test(value) ? null : 'must be a number';
+  return null;   /* text, url — lenient */
+}
+function canonicalValue(v, value){
+  /* sentinels canonicalise to their declared form ("n/a" -> "N/A") */
+  for(const s of SENTINELS){
+    if(String(value).toLowerCase() === String(s).toLowerCase()) return s;
+  }
+  if((v.input_type || 'text') === 'select'){
+    const hit = (v.options || []).find(o => o.toLowerCase() === value.toLowerCase());
+    return hit || value;
+  }
+  return value;
+}
+
+function validateCard(card){
+  /* the Inputs line is mandatory */
+  if(!card.hasInputs)
+    card.errors.push({line:card.codeLine, msg:'card has no Inputs: line'});
+
+  /* the integrity check — declared #ids must equal the fields delivered */
+  const declaredSet = {}, fieldSet = {};
+  card.declared.forEach(id => declaredSet[id] = true);
+  card.fields.forEach(f => fieldSet[f.id] = true);
+  card.declared.forEach(id => {
+    if(!fieldSet[id]) card.errors.push({line:card.codeLine,
+      msg:'#' + id + ' is declared in Inputs but no field sets it'});
+  });
+  card.fields.forEach(f => {
+    if(!declaredSet[f.id]) card.errors.push({line:f.line,
+      msg:'#' + f.id + ' ' + f.field + ' is set but not listed in Inputs'});
+  });
+
+  /* an add card must carry a valid value for every field */
+  if(card.intent === 1){
+    card.fields.forEach(f => {
+      if(f.value === ''){
+        f.valueError = 'an add card needs a value';
+        card.errors.push({line:f.line,
+          msg:'#' + f.id + ' ' + f.field + ' — an add card needs a value'});
+        return;
+      }
+      const e = validateValue(f.variable, f.value);
+      if(e){
+        f.valueError = e;
+        card.errors.push({line:f.line, msg:'#' + f.id + ' ' + f.field + ' — ' + e});
+      } else {
+        f.applyValue = canonicalValue(f.variable, f.value);
+      }
+    });
+  }
+
+  card.intentName = card.intent === 1 ? 'add'
+                  : card.intent === 2 ? 'subtract' : '?';
+  card.ok = card.errors.length === 0 && (card.intent === 1 || card.intent === 2);
+}
+
+/* the fill-map — green for add, red for subtract, problems flagged by line */
+function renderPreview(result){
+  if(result.cards.length === 0 && result.preErrors.length === 0)
+    return '<div class="pv-empty">Nothing to preview — paste a card and press Preview.</div>';
+  let html = '';
+  result.preErrors.forEach(e => {
+    html += '<div class="pv-card bad"><div class="pv-head">Stray line</div>' +
+      '<div class="pv-rows"><div class="pv-err">Line ' + e.line + ': ' +
+      esc(e.msg) + '</div></div></div>';
+  });
+  result.cards.forEach((c, idx) => {
+    const cls = !c.ok ? 'bad' : (c.intent === 1 ? 'add' : 'subtract');
+    const intent = c.intent === 1 ? 'ADD' : c.intent === 2 ? 'SUBTRACT' : 'INVALID';
+    html += '<div class="pv-card ' + cls + '"><div class="pv-head">Card ' +
+      (idx + 1) +
+      '<span class="pv-tag">slot ' + (c.slot == null ? '?' : c.slot) + '</span>' +
+      '<span class="pv-tag">' + intent + '</span>' +
+      '<span class="pv-tag">' + (c.ok ? 'ready' : 'skipped') + '</span></div>';
+    html += '<div class="pv-rows">';
+    c.fields.forEach(f => {
+      const bad = !!f.valueError;
+      html += '<div class="pv-row' + (bad ? ' err' : '') + '">' +
+        '<span class="pv-id">#' + f.id + '</span>' +
+        '<span class="pv-field">' + esc(f.field) + '</span>' +
+        '<span class="pv-val">' +
+        (c.intent === 2 ? 'clear'
+          : (bad ? esc(f.valueError) : '“' + esc(f.value) + '”')) +
+        '</span></div>';
+    });
+    c.errors.forEach(e => {
+      html += '<div class="pv-err">Line ' + e.line + ': ' + esc(e.msg) + '</div>';
+    });
+    html += '</div>';
+    if(!c.ok)
+      html += '<div class="pv-note">This card has errors and will be skipped on Apply.</div>';
+    html += '</div>';
+  });
+  return html;
+}
+
+/* apply the clean cards to the form — add writes VALUES, subtract clears it */
+function applyIntake(result){
+  let cards = 0, fields = 0, jumpTo = null;
+  result.cards.forEach(c => {
+    if(!c.ok) return;
+    c.fields.forEach(f => {
+      const key = f.id + '.' + f.entry;
+      if(c.intent === 1) VALUES[key] = f.applyValue;
+      else delete VALUES[key];
+      fields++;
+      if(jumpTo === null && f.variable.file === active) jumpTo = f.section;
+    });
+    cards++;
+  });
+  ENTRIES = computeEntries();    /* re-derive counts; multi-entry cards may have grown a section */
+  renderSheet();                 /* redraw the active sheet from VALUES */
+  if(jumpTo) showSection(jumpTo);
+  return {cards: cards, fields: fields};
+}
+
+/* modal wiring */
+const intakeModal = document.getElementById('intake-modal');
+const intakeText = document.getElementById('intake-text');
+const intakePreviewArea = document.getElementById('intake-preview-area');
+const intakeApplyBtn = document.getElementById('intake-apply');
+let lastIntake = null;
+
+function openIntake(){ intakeModal.classList.add('show'); intakeText.focus(); }
+function closeIntake(){ intakeModal.classList.remove('show'); }
+
+document.getElementById('intake-open').addEventListener('click', openIntake);
+document.getElementById('intake-close').addEventListener('click', closeIntake);
+intakeModal.addEventListener('click', e => {
+  if(e.target === intakeModal) closeIntake();
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && intakeModal.classList.contains('show')) closeIntake();
+});
+
+document.getElementById('intake-preview').addEventListener('click', () => {
+  lastIntake = parseIntake(intakeText.value);
+  intakePreviewArea.innerHTML = renderPreview(lastIntake);
+  intakeApplyBtn.disabled = !lastIntake.cards.some(c => c.ok);
+});
+intakeText.addEventListener('input', () => {
+  intakeApplyBtn.disabled = true;   /* any edit needs a fresh Preview */
+});
+intakeApplyBtn.addEventListener('click', () => {
+  if(!lastIntake) return;
+  const r = applyIntake(lastIntake);
+  closeIntake();
+  toast('Intake applied — ' + r.cards + ' card' + (r.cards === 1 ? '' : 's') +
+        ' · ' + r.fields + ' field' + (r.fields === 1 ? '' : 's') + ' set');
+});
+
+/* boot — pull the 88 variables, then (when the URL names one) the job,
+   and render. A job loaded from the URL opens locked; a new job opens
+   editable. The 88-variable fetch must finish first: the job's answers
+   have nowhere to render until the sheets are built. */
+async function boot(){
+  const status = document.getElementById('status');
+  try {
+    /* fetch the Index and the sentinel list in parallel. A missing
+       /api/sentinels (e.g. an older server) degrades to "no sentinels" --
+       the form still works without the Mark buttons. */
+    const [vars, sentinels] = await Promise.all([
+      fetch('/api/variables').then(r => r.json()),
+      fetch('/api/sentinels').then(r => r.json()).catch(() => []),
+    ]);
+    VARIABLES = vars;
+    SENTINELS = sentinels;
+    SHEETS = buildSheets(vars);
+    activeSection = firstSection(active);
+
+    if(JOB_ID != null){
+      const res = await fetch('/api/jobs/' + JOB_ID);
+      if(res.ok){
+        const job = await res.json();
+        document.getElementById('company').value = job.name || '';
+        VALUES = job.values || {};
+        JOB_SLOT = job.slot;
+        LOCKED = true;                 /* a saved job opens read-only */
+      } else {
+        /* the URL named a job that is not there — fall back to a new one */
+        JOB_ID = null;
+        history.replaceState(null, '', '/job');
+        toast('That job was not found — starting a new one.');
+      }
+    }
+
+    ENTRIES = computeEntries();        /* per-section entry counts from VALUES */
+    renderTabs();
+    renderSheet();                     /* ends with applyLock() */
+    status.textContent = vars.length + ' variables · 3 sheets · ' +
+      (JOB_ID != null ? 'editing job #' + JOB_ID + ' (slot ' + JOB_SLOT + ')'
+                      : 'a new job — fill it in, then Save');
+  } catch(err){
+    status.textContent =
+      'Could not reach the database — is the app running? (' + err + ')';
+  }
+}
+boot();
+</script>
+</body>
+</html>

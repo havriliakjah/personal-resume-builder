@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 472" width="680" height="472" role="img" aria-labelledby="ttl dsc">
+<title id="ttl">How one formula is stored across three tables</title>
+<desc id="dsc">A formula lives as one row in the formulas table. Two wiring tables, formula_inputs and formula_output_kinds, each carry a formula_id and connect that formula to the variables table and the output_kinds table.</desc>
+<style>
+  text{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;}
+  .th{font-size:19px;font-weight:600;fill:#2D2E3A;}
+  .t{font-size:15px;font-weight:600;fill:#2D2E3A;}
+  .ts{font-size:12px;fill:#6A6A73;}
+  .c-blue rect{fill:#E8F0FE;stroke:#3B72D9;}
+  .c-blue .t{fill:#1A4FA0;}
+  .c-blue .ts{fill:#3B72D9;}
+  .c-purple rect{fill:#F1EAFB;stroke:#8B5CC7;}
+  .c-purple .t{fill:#5E3A8E;}
+  .c-purple .ts{fill:#7B5BA3;}
+  .c-gray rect{fill:#EFEFEC;stroke:#9A9A93;}
+  .c-gray .t{fill:#55554E;}
+  .c-gray .ts{fill:#6E6E66;}
+</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#2D2E3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<rect x="0" y="0" width="680" height="472" fill="#FFFFFF"/>
+
+<text class="th" x="340" y="30" text-anchor="middle">How one formula is stored</text>
+<text class="ts" x="340" y="51" text-anchor="middle">It lives in one table - two wiring tables connect it to the rest</text>
+
+<line x1="300" y1="142" x2="208" y2="190" stroke="#2D2E3A" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="380" y1="142" x2="472" y2="190" stroke="#2D2E3A" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="185" y1="268" x2="185" y2="318" stroke="#2D2E3A" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="495" y1="268" x2="495" y2="318" stroke="#2D2E3A" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+<text class="ts" x="228" y="159" text-anchor="middle">formula_id</text>
+<text class="ts" x="452" y="159" text-anchor="middle">formula_id</text>
+<text class="ts" x="196" y="297" text-anchor="start">variable_id</text>
+<text class="ts" x="506" y="297" text-anchor="start">output_kind_id</text>
+
+<g class="c-blue">
+  <rect x="230" y="78" width="220" height="64" rx="11" stroke-width="1.5"/>
+  <text class="t" x="340" y="106" text-anchor="middle">formulas</text>
+  <text class="ts" x="340" y="125" text-anchor="middle">the formula lives here</text>
+</g>
+<g class="c-purple">
+  <rect x="60" y="192" width="250" height="76" rx="11" stroke-width="1.5"/>
+  <text class="t" x="185" y="223" text-anchor="middle">formula_inputs</text>
+  <text class="ts" x="185" y="244" text-anchor="middle">wires it to variables</text>
+</g>
+<g class="c-purple">
+  <rect x="370" y="192" width="250" height="76" rx="11" stroke-width="1.5"/>
+  <text class="t" x="495" y="223" text-anchor="middle">formula_output_kinds</text>
+  <text class="ts" x="495" y="244" text-anchor="middle">wires it to output kinds</text>
+</g>
+<g class="c-gray">
+  <rect x="60" y="320" width="250" height="64" rx="11" stroke-width="1.5"/>
+  <text class="t" x="185" y="348" text-anchor="middle">variables</text>
+  <text class="ts" x="185" y="367" text-anchor="middle">the 88 questions</text>
+</g>
+<g class="c-gray">
+  <rect x="370" y="320" width="250" height="64" rx="11" stroke-width="1.5"/>
+  <text class="t" x="495" y="348" text-anchor="middle">output_kinds</text>
+  <text class="ts" x="495" y="367" text-anchor="middle">the 9 output kinds</text>
+</g>
+
+<g class="c-blue"><rect x="120" y="396" width="13" height="13" rx="3" stroke-width="1.5"/></g>
+<text class="ts" x="139" y="406" text-anchor="start">the formula</text>
+<g class="c-purple"><rect x="270" y="396" width="13" height="13" rx="3" stroke-width="1.5"/></g>
+<text class="ts" x="289" y="406" text-anchor="start">wiring tables</text>
+<g class="c-gray"><rect x="430" y="396" width="13" height="13" rx="3" stroke-width="1.5"/></g>
+<text class="ts" x="449" y="406" text-anchor="start">what they connect to</text>
+
+<text class="ts" x="340" y="440" text-anchor="middle">Example - "Scale Anchor" = 1 row in formulas, 4 in formula_inputs, 2 in formula_output_kinds</text>
+</svg>

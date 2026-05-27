@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Database — the actual job data.
+# synthesis.db is rebuildable from build_synthesis_db.py (which carries
+# the schema + seed data + the BASE control job). User-entered job data
+# is not committed here. If you want a snapshot, copy the file by hand
+# before destructive ops; if you want shared data, that's a different
+# problem (live sync to a server, or export/import via SQL dumps).
+DB/synthesis.db
+DB/synthesis.db-journal
+DB/synthesis.db-wal
+DB/synthesis.db-shm
+
+# Test artifacts
+DB/test_synthesis.db
+DB/test_synthesis.db-journal
+Frontend/launcher_log.txt
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Python tools
+*.pyc
+*.pyo
+*.pyd
+
+# Local environment
+.env
+.env.local

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personal Profile — Synthesis Workbench</title>
+<style>
+  :root{
+    --bg:#f4f3ee; --card:#ffffff; --card-2:#faf9f6; --border:#e7e5df;
+    --ink:#2d2e3a; --muted:#6a6a73; --faint:#9b9aa3;
+    --coral:#ff6d5a; --coral-hover:#f5604a;
+    --cf:#3b72d9; --pi:#1eb073; --st:#8b5cc7;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    line-height:1.5; padding:1.1rem;}
+
+  header{background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:.8rem 1.1rem; display:flex;
+    align-items:center; gap:1rem; box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .home{font-size:.78rem; font-weight:600; text-decoration:none;
+    color:var(--muted); border:1px solid var(--border); background:var(--card-2);
+    padding:.42rem .7rem; border-radius:8px; flex:none;}
+  .home:hover{border-color:var(--coral); color:var(--coral);}
+  header h1{font-size:1.05rem; font-weight:800;}
+  header .sub{font-size:.78rem; color:var(--muted);}
+
+  main{max-width:860px; margin:1rem auto 0;}
+  .panel{background:var(--card); border:1px solid var(--border);
+    border-radius:14px; box-shadow:0 1px 3px rgba(0,0,0,.05);
+    padding:1rem 1.1rem;}
+
+  .panel-top{display:flex; align-items:flex-start; gap:1rem;}
+  .panel-top h2{font-size:.9rem; font-weight:800;}
+  .panel-top .desc{font-size:.76rem; color:var(--muted); margin-top:.15rem;}
+  .add{margin-left:auto; flex:none; text-decoration:none;
+    font-size:.8rem; font-weight:700; cursor:pointer;
+    border:1px solid var(--coral); background:var(--coral); color:#fff;
+    padding:.46rem .85rem; border-radius:9px;
+    display:inline-flex; align-items:center; gap:.32rem;}
+  .add:hover{background:var(--coral-hover);}
+  .add .plus{font-size:1rem; line-height:1; font-weight:800;}
+
+  .empty{padding:1.4rem 1.15rem; text-align:center;
+    border:1.5px dashed var(--border); border-radius:11px;
+    color:var(--faint); font-size:.83rem; background:var(--card-2);}
+  .empty b{color:var(--coral);}
+
+  /* the job list — one row per saved company */
+  #jobs{margin-top:.85rem; display:flex; flex-direction:column; gap:.5rem;}
+  .loading{padding:1.4rem; text-align:center; color:var(--faint);
+    font-size:.83rem;}
+  .job-row{display:flex; align-items:center; gap:.7rem;
+    border:1px solid var(--border); border-radius:11px;
+    background:var(--card-2); padding:.6rem .8rem;}
+  .job-slot{flex:none; font-size:.7rem; font-weight:800;
+    font-variant-numeric:tabular-nums; color:var(--muted);
+    background:var(--bg); border:1px solid var(--border);
+    border-radius:6px; padding:.14rem .44rem; min-width:1.7rem;
+    text-align:center;}
+  .job-name{flex:1; min-width:0; font-size:.9rem; font-weight:700;
+    color:var(--ink); overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap;}
+  .job-edit,.job-del{flex:none; font:inherit; font-size:.74rem;
+    font-weight:700; cursor:pointer; border-radius:8px;
+    padding:.38rem .72rem; text-decoration:none;
+    border:1px solid var(--border); background:var(--card);
+    color:var(--muted);}
+  .job-edit:hover{border-color:var(--coral); color:var(--coral);}
+  .job-del:hover{border-color:#d9534f; color:#d9534f;}
+
+  /* readiness — a green/yellow dot per row. The status string is
+     computed server-side and comes back from /api/jobs; 'ready' is
+     green, anything else is yellow. The dot has a soft ring so it
+     reads as intentional rather than as a stray pixel. */
+  .status-dot{flex:none; width:.7rem; height:.7rem; border-radius:50%;
+    display:inline-block;}
+  .status-ready{background:#28a45a; box-shadow:0 0 0 2.5px #c8edd6;}
+  .status-progress{background:#d9a23a; box-shadow:0 0 0 2.5px #f8e6c2;}
+  /* tier-graduated dots — match the job page's tier pill colors so the
+     vocabulary stays consistent across the app. T3 is the highest depth
+     a job can reach (the old "ready"); T2 and T1 are intermediate states.
+     stories_active adds a small violet badge regardless of tier. */
+  .status-t3{background:#1e6f4d; box-shadow:0 0 0 2.5px #b8e0cb;}
+  .status-t2{background:var(--pi); box-shadow:0 0 0 2.5px #c8edd6;}
+  .status-t1{background:#ff6d5a; box-shadow:0 0 0 2.5px #ffdcd2;}
+  .story-badge{flex:none; font-size:1.1rem; line-height:1; color:#8b5cc7;
+    margin:0 .25rem 0 -.15rem;}
+
+  /* split the list by readiness — Ready for synthesis at the top, then
+     In progress below. Each section has a small header with its colored
+     dot + a count; empty sections aren't rendered. */
+  .status-section{margin-top:.85rem;}
+  .status-section:first-child{margin-top:0;}
+  .status-section-head{display:flex; align-items:center; gap:.55rem;
+    font-size:.7rem; font-weight:800; letter-spacing:.07em;
+    text-transform:uppercase; color:var(--muted);
+    margin-bottom:.4rem; padding:.05rem .25rem .4rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="/">← Home</a>
+  <div>
+    <h1>Personal Profile</h1>
+    <div class="sub">The companies you've worked at — and the jobs inside them.</div>
+  </div>
+</header>
+
+<main>
+  <div class="panel">
+    <div class="panel-top">
+      <div>
+        <h2>Work Experience</h2>
+        <div class="desc">Each company you add becomes a job, built from three sheets.</div>
+      </div>
+      <a class="add" href="/job"><span class="plus">+</span> Add</a>
+    </div>
+    <div id="jobs">
+      <div class="loading">Loading your companies…</div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* profile.html — the Work Experience list.
+   It asks /api/jobs for every job, drops the BASE control job, and draws
+   one row per company: a slot badge and the name on the left, Edit and
+   Delete on the right. Edit opens /job?id=N; Delete removes the job after
+   a confirm. The page holds no SQL and no state of its own — it re-fetches
+   the list from the server whenever the list changes. */
+
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+/* Tier-level vocabulary for the row UI.  Each tier_level value the API
+   returns maps to its own dot class (color from the tier palette) and
+   a section heading.  Stories sit on a separate axis — `stories_active`
+   adds a small violet ● to the row regardless of tier_level. */
+const TIER_INFO = {
+  t3:   {dotClass:'status-t3',       head:'Tier 3 ready · fully ready for synthesis'},
+  t2:   {dotClass:'status-t2',       head:'Tier 2 ready'},
+  t1:   {dotClass:'status-t1',       head:'Tier 1 ready · anchors filled'},
+  none: {dotClass:'status-progress', head:'In progress'},
+};
+
+/* one company row — slot badge, tier dot, name, optional story marker,
+   and Edit/Delete controls. The tier-dot color encodes the highest
+   tier the job has reached; the violet badge means "this job has at
+   least one story field filled" (engagement-active). */
+function rowHtml(j){
+  const lvl  = j.tier_level || 'none';
+  const info = TIER_INFO[lvl] || TIER_INFO.none;
+  const since = (lvl === 't3' && j.ready_at)
+    ? ' since ' + esc(String(j.ready_at).split(' ')[0]) : '';
+  const dotLabel = info.head + since;
+  const storyBadge = j.stories_active
+    ? '<span class="story-badge" title="Stories engaged — at least one story field filled">●</span>'
+    : '';
+  return '<div class="job-row">' +
+    '<span class="job-slot">' + (j.slot == null ? '·' : j.slot) + '</span>' +
+    '<span class="status-dot ' + info.dotClass + '" title="' + dotLabel + '"></span>' +
+    '<span class="job-name">' + esc(j.name) + '</span>' +
+    storyBadge +
+    '<a class="job-edit" href="/job?id=' + j.id + '">Edit</a>' +
+    '<button class="job-del" data-id="' + j.id + '" data-name="' +
+      esc(j.name) + '">Delete</button>' +
+    '</div>';
+}
+
+function emptyHtml(){
+  return '<div class="empty">No companies added yet — press ' +
+    '<b>+ Add</b> to start one.</div>';
+}
+
+/* Render the job list grouped by tier_level. Four ordered sections —
+   T3 ready, T2 ready, T1 ready, In progress — each hidden when empty.
+   Phase 5 will read the T3-ready bucket; T1 and T2 are intermediate
+   states that say "this job is partly home." */
+const TIER_ORDER = ['t3', 't2', 't1', 'none'];
+
+async function loadJobs(){
+  const box = document.getElementById('jobs');
+  try {
+    const jobs = await fetch('/api/jobs').then(r => r.json());
+    const companies = jobs
+      .filter(j => j.name !== 'BASE')
+      .sort((a, b) => (a.slot || 0) - (b.slot || 0));
+    if(!companies.length){ box.innerHTML = emptyHtml(); return; }
+    const byTier = {t3:[], t2:[], t1:[], none:[]};
+    companies.forEach(j => {
+      const k = j.tier_level || 'none';
+      (byTier[k] || byTier.none).push(j);
+    });
+    let html = '';
+    TIER_ORDER.forEach(k => {
+      const list = byTier[k];
+      if(!list.length) return;
+      const info = TIER_INFO[k];
+      html += '<div class="status-section">' +
+        '<div class="status-section-head">' +
+          '<span class="status-dot ' + info.dotClass + '"></span>' +
+          esc(info.head) + ' · ' + list.length +
+        '</div>' +
+        list.map(rowHtml).join('') +
+        '</div>';
+    });
+    box.innerHTML = html;
+  } catch(err){
+    box.innerHTML = '<div class="empty">Could not reach the database — ' +
+      'is the app running? (' + esc(err) + ')</div>';
+  }
+}
+
+/* Delete — confirm, call DELETE /api/jobs/<id>, then redraw from the server */
+async function deleteJob(id, name){
+  if(!confirm('Delete “' + name + '”?\n\n' +
+      'This removes the job and all of its answers. It cannot be undone.'))
+    return;
+  try {
+    const res = await fetch('/api/jobs/' + id, {method:'DELETE'});
+    if(!res.ok){
+      const e = await res.json().catch(() => ({}));
+      alert('Could not delete — ' + (e.error || 'HTTP ' + res.status));
+      return;
+    }
+    loadJobs();                        /* redraw — the row is gone now */
+  } catch(err){
+    alert('Could not reach the database — ' + err);
+  }
+}
+
+/* one delegated listener — Edit is a plain link, only Delete needs JS */
+document.getElementById('jobs').addEventListener('click', e => {
+  const del = e.target.closest('.job-del');
+  if(del) deleteJob(parseInt(del.dataset.id, 10), del.dataset.name);
+});
+
+loadJobs();
+</script>
+
+</body>
+</html>
