@@ -85,6 +85,7 @@ Reads SSOT from `DB/build_synthesis_db.py`, writes `MD/06_Intake Card Authoring 
 3. **Color is structural identity.** If you add a new repeating section, give it a distinct color in the existing palette family (PI green/amber, CF blue/indigo, Story violet/magenta). Don't reuse an existing section's color. (Principle §8.)
 4. **Don't bypass the data layer.** All SQL lives in `data.py`. `server.py` calls `data.py` functions; HTML calls `/api/*`. If a feature needs a new query, add it to `data.py` first.
 5. **Tests stay green.** Every shipped round added test_api.py assertions for its behavior. Don't ship without extending the suite.
+6. **Screenshots rotate, the README does not.** `Docs/Visual Examples/` follows the canonical + audit-trail pattern: flat level holds the current canonical files (`Main Page.png`, `In Progress Jobs.png`); `Previous_Versions/` holds the superseded ones, date-stamped (e.g. `Main Page - 2026-05-27.png`). When you take a fresh screenshot, move the current one into `Previous_Versions/` with a date in its name, then save the new one over the canonical filename. The README references the canonical filenames only, so it never needs re-editing on refresh.
 
 ---
 
