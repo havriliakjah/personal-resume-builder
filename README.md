@@ -137,3 +137,12 @@ Personal project. Not currently published as a product. If you'd like to discuss
 ## License
 
 MIT — see [LICENSE](./LICENSE). You're free to use, modify, and redistribute as long as the copyright + license notice are included.
+
+---
+
+## Why this README exists
+
+The codebase shows the *what*. This file shows the *why*. The principles are load-bearing — they're what makes adding the next feature a one-line edit instead of a refactor. Anyone reading the code should know they exist, even if the implementation looks straightforward in the moment.
+
+If you're another agent picking up this codebase later: read `MD/01_System_Principles.md` first, then the per-round design docs in `MD/`. Listen for the framings before proposing architecture — most decisions in this codebase came from naming a frustration out loud rather than designing top-down.
+
