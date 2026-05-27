@@ -24,6 +24,14 @@ The docs are numbered for reading order:
 
 ---
 
+## Roadmap
+
+**v1.X — polish on this foundation.** Refinements to the existing architecture, UI, documentation, performance. Anything that improves what's already here without changing the structural shape lands as v1.1, v1.2, etc.
+
+**v2.0+ — private development.** The next layers — formulas that declare tier and engagement requirements, the synthesis output engine, the bolstering loop, multi-job orchestration — are being built in a private workspace. This public repo represents the foundation; the application logic that compounds on top of it stays private until it's worth sharing.
+
+---
+
 ## Project layout
 
 ```
@@ -57,6 +65,12 @@ The docs are numbered for reading order:
 
 ---
 
+## Architecture in one paragraph
+
+Three tiers. The browser (`Frontend/*.html`) calls `Frontend/server.py` (Flask) which calls `Frontend/data.py` (the only code that speaks SQL) which reads/writes `DB/synthesis.db` (SQLite). The schema is built by `DB/build_synthesis_db.py` — that file is the SSOT for the 79 Index variables and every classification rail on them. Never write SQL outside `data.py`. Never bypass `server.py` from the HTML.
+
+---
+
 ## What it does
 
 For each company on a user's work history, the app captures **79 variables** across three logical sheets — Company Facts, Personal Info, Story — through a single unified view (the **By Tier** picker). That view exposes the same 79 variables four different ways:
@@ -87,20 +101,6 @@ A few patterns worth pointing out, because they show up everywhere in the codeba
 **118-assertion test suite.** Covers every API surface plus the derivation engine, the tier progress logic, and the engagement-active stories behavior. `python Frontend/test_api.py` to run.
 
 For the longer story (principles, design decisions, the journey from prototype to here) see `MD/01_System_Principles.md` and the per-feature design docs in `MD/`.
-
----
-
-## Architecture in one paragraph
-
-Three tiers. The browser (`Frontend/*.html`) calls `Frontend/server.py` (Flask) which calls `Frontend/data.py` (the only code that speaks SQL) which reads/writes `DB/synthesis.db` (SQLite). The schema is built by `DB/build_synthesis_db.py` — that file is the SSOT for the 79 Index variables and every classification rail on them. Never write SQL outside `data.py`. Never bypass `server.py` from the HTML.
-
----
-
-## Roadmap
-
-**v1.X — polish on this foundation.** Refinements to the existing architecture, UI, documentation, performance. Anything that improves what's already here without changing the structural shape lands as v1.1, v1.2, etc.
-
-**v2.0+ — private development.** The next layers — formulas that declare tier and engagement requirements, the synthesis output engine, the bolstering loop, multi-job orchestration — are being built in a private workspace. This public repo represents the foundation; the application logic that compounds on top of it stays private until it's worth sharing.
 
 ---
 
