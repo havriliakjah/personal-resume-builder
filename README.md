@@ -27,7 +27,7 @@ Each repeating section has its own color, consistent across every view, so a use
 
 A few patterns worth pointing out, because they show up everywhere in the codebase:
 
-**Schema-as-data.** Every variable carries four classification rails on its row — `input_type`, `tier`, `derived`, `track`. Each rail is a one-line entry in a SSOT seed list inside `DB/build_synthesis_db.py`, build-time validated, idempotently backfilled, exposed through `/api/variables`. Adding a fifth rail tomorrow follows the same template. Documented in `MD/System_Principles.md` §9.
+**Schema-as-data.** Every variable carries four classification rails on its row — `input_type`, `tier`, `derived`, `track`. Each rail is a one-line entry in a SSOT seed list inside `DB/build_synthesis_db.py`, build-time validated, idempotently backfilled, exposed through `/api/variables`. Adding a fifth rail tomorrow follows the same template. Documented in `MD/01_System_Principles.md` §9.
 
 **Server-as-authority for derived values.** A variable marked `derived` carries a recipe string (`count:<section>` or `duration:<vid>,<vid>`). The server's `compute_derived_value()` dispatches by verb. `save_job` silently drops any incoming user value for a derived variable. Manual edits cannot lie to the system because lying is not representable.
 
@@ -37,7 +37,7 @@ A few patterns worth pointing out, because they show up everywhere in the codeba
 
 **118-assertion test suite.** Covers every API surface plus the derivation engine, the tier progress logic, and the engagement-active stories behavior. `python Frontend/test_api.py` to run.
 
-For the longer story (principles, design decisions, the journey from prototype to here) see `MD/System_Principles.md` and the per-feature design docs in `MD/`.
+For the longer story (principles, design decisions, the journey from prototype to here) see `MD/01_System_Principles.md` and the per-feature design docs in `MD/`.
 
 ---
 
@@ -73,12 +73,31 @@ python server.py
 
 ---
 
+## Where to start reading
+
+The docs are numbered for reading order:
+
+1. **README.md** — you're here.
+2. **[JOURNEY.md](./JOURNEY.md)** — short build story (5-minute read).
+3. **[CLAUDE.md](./CLAUDE.md)** — brief for AI agents working on the codebase. Also a useful technical orientation for humans.
+4. **[MD/01_System_Principles.md](<./MD/01_System_Principles.md>)** — the nine load-bearing rules.
+5. **[MD/02_Feature Design - Repeating Entities.md](<./MD/02_Feature Design - Repeating Entities.md>)** — the multi-entry mechanism.
+6. **[MD/03_Feature Design - Derived Variables.md](<./MD/03_Feature Design - Derived Variables.md>)** — server-as-authority for computed fields.
+7. **[MD/04_Feature Design - Story Track + Visual Vocabulary.md](<./MD/04_Feature Design - Story Track + Visual Vocabulary.md>)** — the Story track + per-section colors.
+8. **[MD/05_Feature Design - Intake Code.md](<./MD/05_Feature Design - Intake Code.md>)** — the text-card grammar.
+9. **[MD/06_Intake Card Authoring Kit.md](<./MD/06_Intake Card Authoring Kit.md>)** — user-facing reference for the intake card format.
+
+---
+
 ## Project layout
 
 ```
 .
 ├── CLAUDE.md       ← brief for AI agents working on the codebase
 ├── JOURNEY.md      ← short build story
+├── LICENSE         ← MIT
+├── README.md       ← you're here
+├── requirements.txt
 │
 ├── DB/
 │   └── build_synthesis_db.py     ← SSOT for schema + variable metadata
@@ -92,10 +111,13 @@ python server.py
 │   └── synthesis.{ico,png}       ← app icons
 │
 └── MD/
-    ├── System_Principles.md      ← the nine load-bearing rules
-    ├── Intake Card Authoring Kit.md   ← user-facing intake grammar
-    ├── generate_authoring_kit.py ← regenerates the kit from SSOT
-    └── Feature Design - *.md     ← per-round design docs (all SHIPPED)
+    ├── 01_System_Principles.md
+    ├── 02_Feature Design - Repeating Entities.md
+    ├── 03_Feature Design - Derived Variables.md
+    ├── 04_Feature Design - Story Track + Visual Vocabulary.md
+    ├── 05_Feature Design - Intake Code.md
+    ├── 06_Intake Card Authoring Kit.md
+    └── generate_authoring_kit.py
 ```
 
 ---

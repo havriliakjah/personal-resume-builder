@@ -2,7 +2,7 @@
 
 *Drafted 2026-05-25. Status: **SHIPPED 2026-05-25.** All four stages (R1–R4) are
 built and verified, end to end on real data. Sits beside
-`Feature Design - Intake Code.md`; this document covers the Personal Info
+`05_Feature Design - Intake Code.md`; this document covers the Personal Info
 restructure and the multi-entry build.*
 
 > **Verification log.** Across R1 → R4 the sandbox harnesses logged **119 passing

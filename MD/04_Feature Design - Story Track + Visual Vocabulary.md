@@ -2,7 +2,7 @@
 
 **Status: SHIPPED** — 2026-05-27 (R8.O–U)
 **Owner:** Synthesis Workbench
-**Companion docs:** `System_Principles.md` §7 §8
+**Companion docs:** `01_System_Principles.md` §7 §8
 
 ---
 

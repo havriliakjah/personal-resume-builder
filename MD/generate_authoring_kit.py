@@ -5,7 +5,7 @@ generate_authoring_kit.py  --  rebuilds the Intake Card Authoring Kit.
 WHAT IT IS
 A one-step generator that reads `DB/build_synthesis_db.py` -- the schema
 source of truth -- pulls out every variable and its typing, and writes
-`Intake Card Authoring Kit.md` beside this script. The kit's snapshot of
+`06_Intake Card Authoring Kit.md` beside this script. The kit's snapshot of
 the Index is regenerated from scratch every run, so it never drifts.
 
 WHY A GENERATOR (NOT A HAND-WRITTEN DOC)
@@ -17,7 +17,7 @@ every number is derived, none are hardcoded.
 
 HOW TO RUN
     python "generate_authoring_kit.py"
-It rewrites `Intake Card Authoring Kit.md` in this MD folder.
+It rewrites `06_Intake Card Authoring Kit.md` in this MD folder.
 """
 
 import json
@@ -26,7 +26,7 @@ import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCHEMA = os.path.join(HERE, os.pardir, "DB", "build_synthesis_db.py")
-OUT_MD = os.path.join(HERE, "Intake Card Authoring Kit.md")
+OUT_MD = os.path.join(HERE, "06_Intake Card Authoring Kit.md")
 
 
 # ---- pull VARIABLES and VARIABLE_TYPES out of the schema script ----

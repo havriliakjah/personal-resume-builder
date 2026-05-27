@@ -2,7 +2,7 @@
 
 **Status: SHIPPED** — 2026-05-27 (R8.J–M)
 **Owner:** Synthesis Workbench
-**Companion docs:** `System_Principles.md` §5 §6 §9 · `Feature Design - Repeating Entities.md` (the design-doc format this one mirrors)
+**Companion docs:** `01_System_Principles.md` §5 §6 §9 · `02_Feature Design - Repeating Entities.md` (the design-doc format this one mirrors)
 
 ---
 
