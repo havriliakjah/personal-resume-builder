@@ -1,6 +1,9 @@
 # Synthesis Workbench
 
-*v1.0 · public foundation — see the [Roadmap](#roadmap) for what's private.*
+> **Code v1.0** — the public foundation snapshot (`Frontend/` + `DB/`), stable and frozen.
+> **Content v1.1** — docs, story, and roadmap, refreshed 2026-06-01.
+>
+> Two tracks at two speeds — see [Versioning](#versioning). The [Roadmap](#roadmap) is what's being built privately.
 
 A small, local desktop app that captures a person's work history at a structured level, then runs reusable lenses ("formulas") over the data to produce synthesized, resume-grade points.
 
@@ -26,9 +29,24 @@ The docs are numbered for reading order:
 
 ## Roadmap
 
-**v1.X — polish on this foundation.** Refinements to the existing architecture, UI, documentation, performance. Anything that improves what's already here without changing the structural shape lands as v1.1, v1.2, etc.
+This public repo is the **foundation** — one entity (work history), the schema-as-data engine, the readiness model. Since it was snapshotted, the private workspace has built *on top of* that same foundation without changing its shape:
 
-**v2.0+ — private development.** The next layers — formulas that declare tier and engagement requirements, the synthesis output engine, the bolstering loop, multi-job orchestration — are being built in a private workspace. This public repo represents the foundation; the application logic that compounds on top of it stays private until it's worth sharing.
+- **A second entity.** The generic data layer proved out: the engine that holds work history now also holds a second kind of record — an application / hiring-funnel companion — added as *configuration*, not a parallel copy of the code. The foundation was built to make a second entity nearly free, and it was.
+- **An artifact index.** A lightweight catalog that knows *about* the rendered files a career produces — where each one lives, which application it belongs to — without storing the files themselves. The engine stays a production tool, not a filing cabinet.
+- **Next: the synthesis output engine.** Formulas that declare tier and engagement requirements and turn the stored data into synthesized, resume-grade output — the layer the whole foundation exists to support.
+
+The logic that compounds on top stays private until it's worth sharing; this repo is the load-bearing base it all sits on.
+
+---
+
+## Versioning
+
+This repo carries two version numbers that move independently:
+
+- **Code version** (`v1.0`) — the application source in `Frontend/` and `DB/`. A stable foundation snapshot; it changes only when newer code is deliberately brought over from the private workspace. Everything this README says about the code — the 79 variables, the 118-assertion suite, the nine principles — describes *this* version.
+- **Content version** (`v1.1`) — this README, the JOURNEY, the design docs in `MD/`, and the screenshots. The presentation and the story can be sharpened without touching the code, so they version on their own track.
+
+A bump in content doesn't mean the code moved; the code can sit stable at v1.0 while the writing keeps pace with where the project actually is.
 
 ---
 
