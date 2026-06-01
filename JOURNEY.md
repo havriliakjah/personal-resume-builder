@@ -48,15 +48,21 @@ This extends naturally to anything downstream: a formula UI showing its inputs a
 
 ---
 
-## What this project is now
+## The foundation
 
 A small but real software project. Three-tier architecture (HTML → Flask → data.py → SQLite). SSOT discipline — the schema in `build_synthesis_db.py` is the canonical source for everything else. Four classification rails per variable. Server-as-authority for derivations. A visual vocabulary that turns color into a queryable property. 118-test suite. Boot-time schema verification.
 
 Designed first to handle one specific person's work history. Generalizes to anyone whose work history can be captured in 79 structured variables.
 
-What comes next:
+---
 
-- **Tier-aware readiness** (shipped). Status now graduates from "none" through "T1 ready" → "T2 ready" → "T3 ready" with a progress bar in the UI.
-- **Real formulas.** Lenses that declare `requires_tier` and `requires_stories` and consume the actual variables. The Index has been ready for this since the multi-entry restructure; the missing piece is the formula DSL.
-- **Synthetic output.** A "Page 3" where filled-in variables meet defined formulas and produce candidate resume points. Currently a sandbox.
-- **Profile rollup.** Per-job tiles showing colored dots for which sections have content. Visual vocabulary is already in place.
+## Since the foundation
+
+The foundation above is what this public snapshot holds. The private workspace has kept building on it — and the whole point of the principles is that the building stayed cheap:
+
+- **Tier-aware readiness.** Status went from a single ready/not-ready bit to a graduated ladder — none → T1 → T2 → T3 — with a live progress bar the whole way up.
+- **A second entity.** The real test of "entities are configured, not coded." A whole second kind of record — an application / hiring-funnel companion, with its own variables and its own engagement tracks — was added as configuration and a schema seed, not a parallel copy of the data layer. The engine built for one entity held two without a refactor.
+- **An artifact index.** A different shape of record entirely: a flat catalog that knows *about* the rendered files a career produces — where each one lives, which application it belongs to — without storing the files themselves. That distinction earned its own principle: not everything is a tier-graduated entity; some things are just catalogs.
+- **Next: the synthesis output engine.** Formulas that declare tier and engagement requirements and turn the stored variables into candidate resume points — the layer the whole Index was built to feed.
+
+The arc holds: each layer came from the discipline laid down early, not from fighting it. That's what this project is actually about — naming a frustration out loud, once, so the next ten features are one-line edits instead of refactors.
