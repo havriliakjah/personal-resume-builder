@@ -116,9 +116,9 @@ Each repeating section has its own color, consistent across every view, so a use
 
 ![Personal Profile — three jobs all in progress](<./Docs/Visual Examples/In Progress Jobs - Full.png>)
 
-**Personal Profile — after.** The same three jobs after their intake cards have been pasted in. Each one is now sitting in a different readiness group — T3 Ready (top, with the small violet engagement-active dot because the Story track has content), T2 Ready (middle), T1 Ready (bottom). One image, three colors, every state of the readiness ladder visible at once.
+**Inside a finished job.** One company filled all the way — **Tier 3 ready (75/75)**, every tier bar complete, with the optional **Stories** engagement track active. The readiness dashboard up top is computed live from the values themselves: fill the fields and the bars move, and no status flag is ever stored on the row.
 
-![Personal Profile — three jobs at three readiness tiers](<./Docs/Visual Examples/Completed Job - Tier 1.png>)
+![A finished job — Tier 3 ready, all tier bars full](<./Docs/Visual Examples/Completed Job - Tier 3.png>)
 
 ---
 
