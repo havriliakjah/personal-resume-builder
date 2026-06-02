@@ -108,7 +108,7 @@ Each repeating section has its own color, consistent across every view, so a use
 
 *These show the current live build. The code bundled in this repo is the v1.0 foundation (see [Versioning](#versioning)); the system has grown since, and these are where it is now.*
 
-**Home screen.** Three doors into the app — the **Personal Profile** (where companies live), **Applications** (the hiring-funnel companion, built on the same Index discipline), and the **Formulas** warehouse (the lens catalog). Lightweight by design; the work happens inside.
+**Home screen.** Four doors into the app — the **Personal Profile** (where companies live), **Applications** (the hiring-funnel companion, built on the same Index discipline), the **Formulas** warehouse (the lens catalog), and **Ghost Index** (the catalog of rendered files on disk, indexed by version and date — the files stay put). Lightweight by design; the work happens inside.
 
 ![Synthesis Workbench home screen](<./Docs/Visual Examples/Main Page.png>)
 
